@@ -43,6 +43,15 @@ public class JwtUntil {
                 .compact();
     }
 
+    public String generateTokenFromUsername(String username){
+        return Jwts.builder()
+                .setSubject(username)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date((new Date()).getTime() + jwtDurationMs))
+                .signWith(key(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
     public String generateTokenFromPhone(String phoneNumber){
         return Jwts.builder()
                 .setSubject(phoneNumber)

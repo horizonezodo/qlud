@@ -43,8 +43,9 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             String jwt = parseJwt(request);
             if(jwt == null){
                 filterChain.doFilter(request, response);
+                return;
             }
-            else if (jwt != null && until.validateJwtToken(jwt) && until.verifyToken(jwt)) {
+            else if (until.validateJwtToken(jwt)) {
                 String info = until.getInfoFromJwtToken(jwt);
 
                 UserDetails userDetails = userDetailService.loadUserByUsername(info);
@@ -58,11 +59,6 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 filterChain.doFilter(request, response);
-            }
-            else{
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Unauthorized: Invalid token");
-                return;
             }
         } catch (JwtException e) {
             logger.error("JWT exception: {}", e.getMessage());
