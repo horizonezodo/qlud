@@ -153,45 +153,48 @@
         <div class="product-form" id="productDetails">
             <table class="product-table">
         <#if result??>
+                <thead>
+                <tr>
+                    <th rowspan="2">Product OfferId</th>
+                    <th rowspan="2">Product Title</th>
+                    <th rowspan="2">Product Size</th>
+                    <th rowspan="2">Product Color</th>
+                    <th colspan="2">Price</th>
+                </tr>
+                <tr>
+                    <th>Original Price</th>
+                    <th>Current Price</th>
+                </tr>
+                </thead>
             <#list result as rs>
-                    <thead>
-                    <tr>
-                        <th>Product Id</th>
-                        <th>Product Brand</th>
-                        <th>Product Model</th>
-                        <th>Price</th>
-                        <th>Product Size</th>
-                        <th>Product Color</th>
-                        <th>Product Material</th>
-                        <th>Product Release</th>
-                        <th>Product Sale Area</th>
-                    </tr>
-                    </thead>
+
                     <tbody>
                     <tr>
-                        <td>${rs.productId}</td>
-                        <<td>${rs.productBrand}</td>
-                        <td>${rs.productModel}</td>
+                        <td>${rs.offerId}</a></td>
+                        <td><a href="${rs.link}">${rs.productTitle}</a></td>
+                        <#assign sizeString = rs.productColorAndSize.productSize.size?join(",")>
+                        <td>${sizeString}</td>
+                        <#assign colorList = rs.productColorAndSize.productColor.colors?map(p -> p.name)>
+                        <#assign nameString = colorList?join(",")>
+                        <td>${nameString}</td>
                         <td>
-                            <#assign priceList = rs.prices>
-                            <#if rs.priceList??>
-                                <#list priceList as p>
-                                    ${p.price} for ${p.priceAmount}<#if p_has_next> - </#if>
-                                </#list>
-                            <#else>
-                                0.00
-                            </#if>
+                            <#list rs.productPrices.originalPrice as originalPrice>
+                                ${originalPrice.price}  for  ${originalPrice.priceAmount}
+                                <#if originalPrice?has_next> - </#if>
+                            </#list>
                         </td>
-                        <td>${rs.productSize}</td>
-                        <td>${rs.productColor}</td>
-                        <td>${rs.material}</td>
-                        <td>${rs.productRelease}</td>
-                        <td>${rs.productSaleArea}</td>
+                        <td>
+                            <#list rs.productPrices.currentPrice as currentPrice>
+                                ${currentPrice.price} + for + ${currentPrice.priceAmount}
+                                <#if currentPrice?has_next> - </#if>
+                            </#list>
+                        </td>
                     </tr>
+                    </#list>
                     </tbody>
                 </table>
             </div>
-        </#list>
+
         <#else>
             <tr>
                 <td colspan="6">No details available.</td>
@@ -345,17 +348,12 @@
 <#--Script for logout btn-->
 <script>
     document.getElementById('logoutBtn').addEventListener('click', function(event) {
-        event.preventDefault(); // Ngăn chặn hành động mặc định của liên kết
-
+        event.preventDefault();
         const accessToken = localStorage.getItem("accessToken");
-
-        // Kiểm tra xem accessToken có tồn tại không
         if (!accessToken) {
             console.error("accessToken is missing");
-            return; // Ngăn không cho tiếp tục nếu accessToken không tồn tại
+            return;
         }
-
-        // Gọi API logout
         fetch('/auth/logout', {
             method: 'POST',
             headers: {
@@ -366,11 +364,10 @@
         })
             .then(response => {
                 if (response.ok) {
-                    // Xóa token khỏi localStorage
                     localStorage.removeItem("accessToken");
                     localStorage.removeItem("refreshToken");
                     console.log('Logout successful');
-                    window.location.href = '/'; // Chuyển hướng về trang chính
+                    window.location.href = '/';
                 } else {
                     console.error('Logout failed');
                 }

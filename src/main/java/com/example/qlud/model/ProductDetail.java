@@ -4,10 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Color {
-    private String name;
-    private String imageUrl;
+public class ProductDetail {
+    String name;
+    List<ProductInfo> productInfos;
 }

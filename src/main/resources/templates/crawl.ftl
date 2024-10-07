@@ -126,7 +126,7 @@
                             </form>
                         </ul>
                         <div class="quote_btn-container">
-                            <a href="#" class="quote_btn" id="logoutBtn">
+                            <a href="/auth/logout" class="quote_btn" id="logoutBtn">
                                 Logout
                             </a>
                         </div>
@@ -158,69 +158,62 @@
                             <input type="text" id="websiteUrl" placeholder="Website Url" />
                         </div>
                         <div class="form_group">
+                            <input type="text" id="cookieData" placeholder="Cookie" />
+                        </div>
+                        <div class="form_group">
                             <button type="submit">CRAWL</button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
-        <div class="product-form" style="display:none;" id="productDetails">
-            <h2>Product Details</h2>
-            <div class="form-field">
-                <label for="pTitle">Title:</label>
-                <input type="text" id="pTitle" name="pTitle" placeholder="Enter product title" readonly>
-            </div>
-            <div class="form-field">
-                <label for="pBrand">Brand:</label>
-                <input type="text" id="pBrand" name="pBrand" placeholder="Enter brand" readonly>
-            </div>
-            <div class="form-field">
-                <label for="pStype">Style:</label>
-                <input type="text" id="pStype" name="pStype" placeholder="Enter style" readonly>
-            </div>
-            <div class="form-field">
-                <label for="pColor">Color:</label>
-                <input type="text" id="pColor" name="pColor" placeholder="Enter color" readonly>
-            </div>
-            <div class="form-field">
-                <label for="pPrice">Price:</label>
-                <input type="text" id="pPrice" name="pPrice" placeholder="Enter price" readonly>
-            </div>
-            <div class="form-field">
-                <label for="pMaterial">Material:</label>
-                <input type="text" id="pMaterial" name="pMaterial" readonly>
-            </div>
-            <div class="form-field">
-                <label for="pProductType">Product Type:</label>
-                <input type="text" id="pProductType" name="pProductType"  readonly>
-            </div>
-            <div class="form-field">
-                <label for="pRelease">Product Release:</label>
-                <input type="text" id="pRelease" name="pRelease" readonly>
-            </div>
-            <div class="form-field">
-                <label for="pSaleArea">Product Sale Area:</label>
-                <input type="text" id="pSaleArea" name="pSaleArea" readonly>
-            </div>
-            <div class="form-field">
-                <label for="pSize">Product Size:</label>
-                <input type="text" id="pSize" name="pSize" readonly>
+        <div class="product-form" id="productDetails" style="display:none;">
+            <div class="upper-layout">
+                <div class="left-side">
+                    <div class="main-image-container">
+                        <button id="prevImageBtn">  </button>
+<#--                        <img id="mainImage" src="" alt="Product Image" style="width: 300px; height: 300px;">-->
+                        <div id="mainImage" style="width: 500px; height: 500px; background-size: cover; background-position: center;"></div>
+                        <button id="nextImageBtn">  </button>
+                    </div>
+                    <div class="thumbnail-container">
+                        <button class="prevButton" id="prevButton" style="display: none;">&lt;</button>
+                        <div id="thumbnailList"></div>
+                        <button class="nextButton" id="nextButton"  style="display: none;">&gt;</button>
+                    </div>
+                </div>
+
+                <div class="right-side">
+                    <div class="product-info">
+                        <h2 id="pTitle" class="pTitle"><a id="pLink"></a></h2>
+                        <div class="price-display">
+                            <p id="priceName"></p>
+                            <div class="price" id="priceDiv"></div>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <p id="color-name"></p>
+                        <div id="color-buttons"></div>
+                    </div>
+                    <div class="size-info">
+                        <p id="size-name"></p>
+                        <table class="size-table">
+                            <tbody id="sizeDetails"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
-            <h3>Other Products</h3>
-            <table class="product-table">
-                <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Image</th>
-                    <th>Price</th>
-                    <th>Available Count</th>
-                    <th>Sale Count</th>
-                </tr>
-                </thead>
-                <tbody id="otherProducts">
-                </tbody>
+            <h3><span class="spanColor">|</span><span id="product-table-name"></span></h3>
+            <table class="product-table" id="product-table">
+                <tbody id="otherProducts"></tbody>
             </table>
+
+            <div class="video-container" id="video-container">
+                <h4 id="video-title"></h4>
+                <div id="videoDemo">
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -372,72 +365,285 @@
 <!-- End Google Map -->
 <#--script for crawl btn-->
 <script>
+
     const accessToken = localStorage.getItem("accessToken");
+    let currentImageIndex = 0;
+    const MAX_IMAGES = 4;
+    const MIN_IMAGES = 1;
+    let imageList = [];
     document.getElementById('crawlForm').addEventListener('submit', function(event) {
         event.preventDefault();
 
-        // Lấy URL từ input
         const websiteUrl = document.getElementById('websiteUrl').value;
+        const cookieData = document.getElementById('cookieData').value;
+        const cookieEncodeData = encodeURIComponent(cookieData);
+        console.log(cookieEncodeData);
         console.log('URL nhập vào:', websiteUrl);
         const CrawlData = {
             crawlUrl: websiteUrl,
+            cookieData: cookieEncodeData,
         };
-
-        // Gửi request tới backend
         fetch('/app/crawl', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer `+accessToken
             },
-            body: JSON.stringify({ CrawlData })
+            body: JSON.stringify({ crawlUrl: websiteUrl,cookieData:cookieEncodeData })
         })
             .then(response => response.json())
             .then(data => {
-                const priceData= data.price.map(p => p.price + ' for ' + p.priceAmount).join(' - ');
-                document.getElementById('pTitle').value = data.productId || '';
-                document.getElementById('pBrand').value = data.productBrand || '';
-                document.getElementById('pStype').value = data.productModel || '';
-                document.getElementById('pColor').value = data.productColor || '';
-                document.getElementById('pPrice').value = priceData || '';
-                document.getElementById('pMaterial').value = data.material || '';
-                document.getElementById('pProductType').value = data.productType || '';
-                document.getElementById('pSaleArea').value = data.productSaleArea || '';
-                document.getElementById('pRelease').value = data.productRelease || '';
-                document.getElementById('pSize').value = data.productSize || '';
+                console.log(data)
 
-                const otherProductsTable = document.getElementById('otherProducts');
-                otherProductsTable.innerHTML = '';
-                data.colors.forEach(product => {
-                    const priceToDisplay = (product.price === '0.00' || product.price === 0) ? priceData : product.price;
-                    const row = `<tr>
-                            <td>` + product.name + `</td>
-                            <td><img src="`+product.imageUrl +`" alt=" ` + product.name+`" style="width: 50px; height: 50px;" /></td>
-                            <td>` + priceToDisplay+ `</td>
-                            <td>`+product.remainingProducts+`</td>
-                            <td>`+product.saleProductCount+`</td>
-                        </tr>`;
-                    otherProductsTable.insertAdjacentHTML('beforeend', row);
+                document.getElementById("pLink").innerText = data.productTitle || '';
+                document.getElementById("pLink").setAttribute("href",data.link || '');
+
+                document.getElementById("priceName").innerText = data.productPrices.name || '';
+
+                const priceDisplay = (Array.isArray(data.productPrices.originalPrice) && data.productPrices.originalPrice.length > 0)
+                    ? data.productPrices.originalPrice
+                    : data.productPrices.currentPrice;
+
+                console.log(priceDisplay)
+
+                const maxPrice = Math.max(...priceDisplay.map(item => parseFloat(item.price)));
+                console.log(maxPrice)
+
+                const priceDiv = document.getElementById("priceDiv");
+                priceDiv.classList.add("priceDiv");
+                priceDisplay.forEach(dataPrice => {
+                    console.log(dataPrice.price + " amount " + dataPrice.priceAmount)
+                    const priceContent = document.createElement("div")
+                    priceContent.classList.add("priceContent")
+
+                    const h2 = document.createElement("p");
+                    h2.classList.add('priceInt');
+                    h2.innerHTML = dataPrice.price;
+
+                    const priceConnect = document.createElement("p");
+                    priceConnect.classList.add('priceConnect');
+                    priceConnect.innerHTML = "&nbsp&nbsp&nbspfor&nbsp&nbsp&nbsp ";
+
+                    const p = document.createElement("p");
+                    p.classList.add('priceDetail');
+                    p.innerHTML = dataPrice.priceAmount;
+                    priceContent.appendChild(h2);
+                    priceContent.appendChild(priceConnect)
+                    priceContent.appendChild(p);
+                    priceDiv.appendChild(priceContent)
+                })
+
+                const sizeTable = document.getElementById("sizeDetails");
+                document.getElementById("size-name").innerText = data.productColorAndSize.productSize.name;
+
+                const otherImageProductDiv = document.getElementById("color-buttons");
+                document.getElementById("color-name").innerText = data.productColorAndSize.productColor.name;
+
+                data.productColorAndSize.productColor.colors.forEach(imageOtherProduct =>{
+                   const button = document.createElement("button");
+                   button.classList.add('color-button');
+                   button.innerHTML = `<img src="` + imageOtherProduct.imageUrl + `" alt="` + imageOtherProduct.name + `" style="width: 36px; height: 36px; margin-right: 10px"/>` + imageOtherProduct.name;
+                   button.addEventListener("click",() => updateTable(imageOtherProduct.name));
+                   otherImageProductDiv.appendChild(button);
+
                 });
 
-                // Hiển thị phần product-form
+                function updateTable(selectorColorName){
+                    sizeTable.innerHTML='';
+                    data.productColorAndSize.productSize.size.forEach(size => {
+                        const detail = data.productColorAndSize.productInfoMap.find(detail =>
+                        {
+                            const [colorName, sizeName] = detail.name.split('&gt;');
+                            return colorName.trim() === selectorColorName && sizeName.trim() === size.trim()
+                        });
+
+                        console.log(detail)
+
+                        const row = document.createElement("tr");
+                        const sizeCell = document.createElement("td");
+                        sizeCell.innerText = size;
+                        row.appendChild(sizeCell);
+
+                        const priceCell = document.createElement("td")
+                        const priceData = detail.discountPrice ? detail.discountPrice : detail.currentPrice;
+                        const colorPrice = ((parseFloat(priceData) ===0)? maxPrice : priceData) + " 元"
+                        priceCell.innerText = detail? colorPrice : "N/A";
+                        row.appendChild(priceCell);
+                        sizeTable.appendChild(row);
+
+                        const canBookCountCell = document.createElement("td")
+                        canBookCountCell.innerText = detail? detail.canBookCount : "N/A";
+                        row.appendChild(canBookCountCell);
+
+                        const saleCountCell = document.createElement("td")
+                        saleCountCell.classList.add("saleCountClass")
+                        const decreamentBtn = document.createElement("button")
+                        decreamentBtn.classList.add("decreamentBtn")
+                        decreamentBtn.id = "decrementBtn"
+                        decreamentBtn.innerHTML = "-"
+
+                        const canBookCellText = document.createElement("p");
+                        canBookCellText.id = "counterLabel"
+                        canBookCellText.classList.add("canBookText")
+                        canBookCellText.innerText = detail? detail.saleCount : "N/A";
+
+                        const incrementBtn = document.createElement("button")
+                        incrementBtn.classList.add("incrementBtn")
+                        incrementBtn.id = "incrementBtn"
+                        incrementBtn.innerHTML = "+"
+
+                        saleCountCell.appendChild(decreamentBtn)
+                        saleCountCell.appendChild(canBookCellText)
+                        saleCountCell.appendChild(incrementBtn)
+                        row.appendChild(saleCountCell);
+
+                    });
+                }
+
+                updateTable(data.productColorAndSize.productColor.colors[0].name);
+
+                imageList = data.imageProductList;
+                displayMainImage(currentImageIndex);
+
+                function displayThumbnails(){
+                    const thumbnailList = document.getElementById('thumbnailList');
+                    thumbnailList.innerHTML = '';
+                    const displayedImages = imageList.slice(currentImageIndex, currentImageIndex + MAX_IMAGES);
+                    displayedImages.forEach((image, index) => {
+                        const thumbnailIndex = currentImageIndex + index
+                        const thumbnail = `<img src="`+image+`" alt="Product Thumbnail" style="width: 50px; height: 50px;" onclick="selectImage(` +thumbnailIndex+`)">`;
+                        thumbnailList.insertAdjacentHTML('beforeend', thumbnail);
+                    });
+                    upadteNavigationButtons();
+                }
+
+                function upadteNavigationButtons(){
+                    const prevButton = document.getElementById('prevButton');
+                    const nextButton = document.getElementById('nextButton');
+                    prevButton.style.display = currentImageIndex === 0 ? 'none' : 'inline-block';
+                    nextButton.style.display = currentImageIndex + MIN_IMAGES >= imageList.length ? 'none' : 'inline-block';
+                }
+                function nextImages() {
+                    if (currentImageIndex + MIN_IMAGES < imageList.length) {
+                        currentImageIndex += MIN_IMAGES;
+                        displayThumbnails();
+                    }
+                }
+
+                function prevImages() {
+                    if (currentImageIndex > 0) {
+                        currentImageIndex -= MIN_IMAGES;
+                        displayThumbnails();
+                    }
+                }
+
+                document.getElementById('prevButton').addEventListener('click', prevImages);
+                document.getElementById('nextButton').addEventListener('click', nextImages);
+                displayThumbnails();
+
+                document.getElementById('product-table-name').innerText = data.productDetail.name || ''
+                const tbody = document.querySelector('#product-table tbody');
+                const productDetail = data.productDetail;
+                for(let i = 0; i<productDetail.productInfos.length;i+=4 ){
+                    const row = document.createElement("tr");
+
+                    for(let j = 0;j<4;j++){
+                        if(i+j < productDetail.productInfos.length){
+                            const info = productDetail.productInfos[i+j];
+
+                            const cellName = document.createElement("td");
+                            cellName.textContent = info.name;
+                            row.appendChild(cellName);
+
+                            const cellValue = document.createElement("td");
+                            cellValue.textContent = info.value;
+                            row.appendChild(cellValue);
+                        }else{
+                            const cellName = document.createElement("td");
+                            row.appendChild(cellName);
+
+                            const cellValue = document.createElement("td");
+                            row.appendChild(cellValue);
+                        }
+                    }
+                    tbody.appendChild(row);
+                }
+
+
+                const videoDiv = document.getElementById("videoDemo");
+                const titleVideo = document.getElementById("video-title");
+                if(typeof data.videoUrl !== 'undefined' && data.videoUrl !== null && data.videoUrl !== '') {
+                    titleVideo.innerHTML = "Product Demo";
+                    const videoProduct = document.createElement("video");
+                    videoProduct.src= data.videoUrl;
+                    videoProduct.autoplay=true;
+                    videoProduct.muted = true;
+                    videoProduct.loop = true;
+                    videoProduct.classList.add("videoProduct");
+                    videoDiv.appendChild(videoProduct);
+                }
+
                 document.getElementById('productDetails').style.display = 'block';
             })
             .catch(error => console.error('Error:', error));
     });
+    function displayMainImage(index) {
+        // const mainImage = document.getElementById('mainImage');
+        // mainImage.src = imageList[index];
+        const mainImageDiv = document.getElementById('mainImage');
+        mainImageDiv.style.backgroundImage = `url(`+imageList[index]+`)`;
+        mainImageDiv.style.backgroundSize = 'cover';
+        mainImageDiv.style.backgroundPosition = 'center';
+    }
 
+    document.getElementById('prevImageBtn').addEventListener('click', function() {
+        if (currentImageIndex > 0) {
+            currentImageIndex--;
+        } else {
+            currentImageIndex = imageList.length - 1;
+        }
+        displayMainImage(currentImageIndex);
+    });
+
+    document.getElementById('nextImageBtn').addEventListener('click', function() {
+        if (currentImageIndex < imageList.length - 1) {
+            currentImageIndex++;
+        } else {
+            currentImageIndex = 0;
+        }
+        displayMainImage(currentImageIndex);
+    });
+
+    function selectImage(index) {
+        currentImageIndex = index;
+        displayMainImage(index);
+    }
+
+</script>
+<#--Controll button increament Buy product and decreament Buy product-->
+<script>
+    let counter = 0;
+    const counterLabel = document.getElementById('counterLabel');
+    document.getElementById('incrementBtn').addEventListener('click', function() {
+        counter++;
+        counterLabel.textContent = counter;
+        console.log("increment attachment");
+    });
+    document.getElementById('decrementBtn').addEventListener('click', function() {
+        counter--;
+        counterLabel.textContent = counter;
+        console.log("decrement attachment");
+    });
 </script>
 <#--Script for logout btn-->
 <script>
     document.getElementById('logoutBtn').addEventListener('click', function(event) {
-        event.preventDefault(); // Ngăn chặn hành động mặc định của liên kết
+        event.preventDefault();
 
         const accessToken = localStorage.getItem("accessToken");
-
-        // Kiểm tra xem accessToken có tồn tại không
         if (!accessToken) {
             console.error("accessToken is missing");
-            return; // Ngăn không cho tiếp tục nếu accessToken không tồn tại
+            return;
         }
 
         // Gọi API logout
@@ -451,11 +657,10 @@
         })
             .then(response => {
                 if (response.ok) {
-                    // Xóa token khỏi localStorage
                     localStorage.removeItem("accessToken");
                     localStorage.removeItem("refreshToken");
                     console.log('Logout successful');
-                    window.location.href = '/'; // Chuyển hướng về trang chính
+                    window.location.href = '/';
                 } else {
                     console.error('Logout failed');
                 }

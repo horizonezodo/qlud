@@ -7,7 +7,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Color {
+public class SizeDetail {
+    private String id;
     private String name;
-    private String imageUrl;
+    private String price;
+    private int canBookCount;
+    private int saleCount;
 }

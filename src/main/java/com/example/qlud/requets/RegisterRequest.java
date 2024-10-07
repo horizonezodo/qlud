@@ -15,4 +15,5 @@ public class RegisterRequest {
     String password;
     String phoneNumber;
     String userRole;
+    String recaptchaToken;
 }

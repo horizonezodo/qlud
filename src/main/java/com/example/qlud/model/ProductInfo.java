@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Color {
+public class ProductInfo {
+    private int id;
     private String name;
-    private String imageUrl;
+    private String value;
 }

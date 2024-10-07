@@ -9,4 +9,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CrawlRequest {
     String crawlUrl;
+    String cookieData;
 }

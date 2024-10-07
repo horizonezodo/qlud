@@ -49,6 +49,9 @@
                     </div>
                 </div>
                 <div class="form-group">
+                    <div style="margin-left: 15px" class="g-recaptcha" data-sitekey="6LfWglUqAAAAAAZ-U4V-SjJeXBYG5q9D5-e7b1J-"></div>
+                </div>
+                <div class="form-group">
                     <div class="col-md-6">
                         <a href="/" class="btn btn-link btn-block">You have account</a>
                     </div>
@@ -87,7 +90,11 @@
     document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('registrationForm').addEventListener('submit', async function(event) {
             event.preventDefault();
-            console.log("Submit event triggered");
+            const recaptchaResponse = grecaptcha.getResponse();
+            if (!recaptchaResponse) {
+                alert("Please complete the reCAPTCHA");
+                return;
+            }
             const username = document.querySelector('input[name="username"]').value;
             const email = document.querySelector('input[name="email"]').value;
             const phone = document.querySelector('input[name="phone"]').value;
@@ -103,7 +110,8 @@
                 userEmail: email,
                 password: password,
                 phoneNumber: phone,
-                userRole:'user'
+                userRole:'user',
+                recaptchaToken: recaptchaResponse
             };
             try{
             const response = await fetch('/auth/register', {
@@ -128,6 +136,8 @@
         });
     });
 </script>
+
+<script src='https://www.google.com/recaptcha/api.js'></script>
 </body>
 </html>
 

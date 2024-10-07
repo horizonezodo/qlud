@@ -1,14 +1,10 @@
 package com.example.qlud.control;
 
-import com.example.qlud.DTO.ProductDTO;
-import com.example.qlud.model.Color;
-import com.example.qlud.model.Price;
-import com.example.qlud.model.Product;
+import com.example.qlud.model.*;
 import com.example.qlud.repo.ProductRepo;
 import com.example.qlud.requets.CrawlRequest;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.example.qlud.response.CrawlResponse;
+import com.example.qlud.response.MessageResponse;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -22,10 +18,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.net.URLDecoder;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,10 +30,100 @@ public class CrawlController {
     @Autowired
     ProductRepo repo;
 
-    private String getHtmlWeb(String url){
+    @PostMapping("/crawl")
+    public ResponseEntity<?> crawlData(@RequestBody CrawlRequest request) throws IOException {
+//        File htmlFile = new File("E:\\data.html");
+//        Document doc = Jsoup.parse(htmlFile, "UTF-8");
+        String decodedData = URLDecoder.decode(request.getCookieData(), "UTF-8");
+        System.out.println(decodedData);
+        String rawHtmlData = getHtmlWeb(request.getCrawlUrl(), decodedData);
+        if(rawHtmlData != null){
+            Document doc = Jsoup.parse(rawHtmlData);
+            String title = doc.title();
+            Elements elements = doc.select("script");
+            String OtherProduct = "\"skuModel\":\\{.*?\\}\\}";
+            String OtherProduct2 = "\"distributeSkuModel\":\\{([^}]*)\\}";
+            String data = "";
+            String price = "";
+            String otherProduct = "";
+            String otherProduct2 = "";
+            String ListImage = "";
+            String videoJson = "";
+            for (Element element: elements) {
+                String scriptContent = element.html();
+                if (scriptContent.contains("window.__GLOBAL_DATA") || scriptContent.contains("window.__INIT_DATA")) {
+                    String dataSection = extractDataSection(scriptContent, "\"data\":[{", "}]}");
+                    String propsList = extractDataSection(scriptContent, "\"propsList\":[{", "}]}");
+                    data += dataSection + propsList;
+                    price += extractDataSection(scriptContent, "\"currentPrices\":[{", "}]}");
+                    ListImage += extractDataSection(scriptContent, "\"offerImgList\":[", "]");
+                    videoJson += extractDataSection(scriptContent,"\"video\":{","}");
+                    Pattern pattern = Pattern.compile(OtherProduct,Pattern.DOTALL);
+                    Matcher matcher = pattern.matcher(scriptContent);
+                    while (matcher.find()) {
+                        otherProduct += matcher.group();
+
+                    }
+                    otherProduct2 += extractDataSection(scriptContent,"\"distributeSkuModel\":{","}}");
+
+                }
+            }
+            if(price.isEmpty() && data.isEmpty() && otherProduct.isEmpty() && ListImage.isEmpty() && videoJson.isEmpty() && otherProduct2.isEmpty()){
+                if(rawHtmlData.contains("captcha")){
+                    return new ResponseEntity<>(new MessageResponse("Sorry bot got captcha see you late"), HttpStatus.BAD_REQUEST);
+                }else if(rawHtmlData.contains("login")){
+                    return new ResponseEntity<>(new MessageResponse("Cookie is expired change cookie please"), HttpStatus.BAD_REQUEST);
+                }else{
+                    return new ResponseEntity<>(new MessageResponse("No data found"), HttpStatus.BAD_REQUEST);
+                }
+            }else{
+                CrawlResponse result = new CrawlResponse();
+                if(!price.isEmpty()){
+                    result.setProductPrices(convertStringPriceToObject(price));
+                }
+                if(!otherProduct.isEmpty() || !otherProduct2.isEmpty()){
+                    if(otherProduct.contains("skuProps")){
+                        result.setProductColorAndSize(convertStringOtherProductToObject(otherProduct));
+                    }else if(otherProduct2.contains("skuProps")){
+                        result.setProductColorAndSize(convertStringOtherProductToObject2(otherProduct2));
+                    }
+                }
+                if(!data.isEmpty()){
+                    result.setProductDetail(convertProductInfoFromProductInfoString(data));
+                }
+                if(!ListImage.isEmpty()){
+                    result.setImageProductList(convertImageListFromImageListJson(ListImage));
+                }
+                if(!videoJson.isEmpty()){
+                    result.setVideoUrl(getVideoUrlFromVideoJson(videoJson));
+                }
+
+                result.setOfferId(getOfferIdFromUrl(request.getCrawlUrl()));
+                result.setProductTitle(title);
+                result.setLink(request.getCrawlUrl());
+                System.out.println(result);
+                Optional<Product> productOpt = repo.findById(result.getOfferId());
+                if(productOpt.isPresent()){
+                    Product p = productOpt.get();
+                    repo.save(TransferDataFromResponseToObject(p, result));
+                }else{
+                    Product p = new Product();
+                    p.setOfferId(getOfferIdFromUrl(request.getCrawlUrl()));
+                    Product newProduct = TransferDataFromResponseToObject(p,result);
+                    repo.save(newProduct);
+                }
+                return ResponseEntity.ok(result);
+            }
+        }else{
+            return new ResponseEntity<>(new MessageResponse("No raw Data get"), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    private String getHtmlWeb(String url,String cookie){
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("Cookie", "cookie");
+        httpHeaders.add("Cookie", cookie);
+        httpHeaders.add("User-Agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36");
         HttpEntity<String> entity = new HttpEntity<>(httpHeaders);
         ResponseEntity<String > res = restTemplate.exchange(
                 url,
@@ -55,56 +139,6 @@ public class CrawlController {
         }
     }
 
-    @PostMapping("/crawl")
-    public ResponseEntity<?> crawlData(@RequestBody CrawlRequest request){
-        try{
-            File htmlFile = new File("E:\\data2.html");
-            Document doc = Jsoup.parse(htmlFile, "UTF-8");
-            Elements elements = doc.select("script");
-            String OtherProduct = "\"skuModel\":\\{.*?\\}\\}";
-            String data = "";
-            String price = "";
-            String otherProduct = "";
-            String json = "";
-            for (Element element: elements) {
-                String scriptContent = element.html();
-                if (scriptContent.contains("window.__GLOBAL_DATA") || scriptContent.contains("window.__INIT_DATA")) {
-                    String dataSection = extractDataSection(scriptContent, "\"data\":[{", "}]}");
-                    String propsList = extractDataSection(scriptContent, "\"propsList\":[{", "}]}");
-                    data += dataSection + propsList;
-                    price += extractDataSection(scriptContent, "\"currentPrices\":[{", "}]}");
-                    Pattern pattern = Pattern.compile(OtherProduct,Pattern.DOTALL);
-                    Matcher matcher = pattern.matcher(scriptContent);
-                    while (matcher.find()) {
-                        otherProduct += matcher.group();
-
-                    }
-                }
-            }
-            Product result = new Product();
-            result.setPrice(convertStringPriceToObject(price));
-            result.setColors(convertStringOtherProductToObject(otherProduct));
-            ProductDTO productDTO = convertProductInfoFromProductInfoString(data);
-            result.setProductId(productDTO.getProductId());
-            result.setMaterial(productDTO.getMaterial());
-            result.setProductBrand(productDTO.getProductBrand());
-            result.setProductModel(productDTO.getProductModel());
-            result.setProductSaleArea(productDTO.getProductSaleArea());
-            result.setProductSize(productDTO.getProductSize());
-            result.setProductColor(productDTO.getProductColor());
-            result.setProductType(productDTO.getProductType());
-            result.setProductRelease(productDTO.getProductRelease());
-            System.out.println(result);
-            //repo.save(result);
-            return ResponseEntity.ok(result);
-        }catch (IOException e){
-            e.printStackTrace();
-            return new ResponseEntity<>("Bad request", HttpStatus.BAD_REQUEST);
-        }
-
-    }
-
-
     public static String extractDataSection(String content, String start, String end) {
         int startIndex = content.indexOf(start);
         if (startIndex != -1) {
@@ -116,9 +150,24 @@ public class CrawlController {
         return "";
     }
 
-    private List<Price> convertStringPriceToObject(String priceString){
+    private Product TransferDataFromResponseToObject(Product product, CrawlResponse res){
+        product.setProductTitle(res.getProductTitle());
+        product.setLink(res.getLink());
+        product.setProductDetail(res.getProductDetail());
+        product.setProductColorAndSize(res.getProductColorAndSize());
+        product.setProductPrices(res.getProductPrices());
+        product.setImageProductList(res.getImageProductList());
+        product.setVideoUrl(res.getVideoUrl());
+        product.setProductImageDetail(res.getProductImageDetail());
+        return product;
+    }
+
+    private ProductPrice convertStringPriceToObject(String priceString){
         String jsonString = "{" + priceString + "}";
+        ProductPrice productPrice = new ProductPrice();
         List<Price> priceList = new ArrayList<>();
+        List<Price> originalPriceList = new ArrayList<>();
+        productPrice.setName("价格");
         JSONObject jsonObject = new JSONObject(jsonString);
         JSONArray currentPrices = jsonObject.getJSONArray("currentPrices");
         for (int i = 0; i < currentPrices.length(); i++) {
@@ -128,65 +177,175 @@ public class CrawlController {
             Price priceObject = new Price(price,beginAmount);
             priceList.add(priceObject);
         }
-        return priceList;
+
+        if(jsonObject.has("originalPrices")){
+            JSONArray originalPrices = jsonObject.getJSONArray("originalPrices");
+            for(int i =0 ; i< originalPrices.length();i++){
+                JSONObject originalPriceInfo = currentPrices.getJSONObject(i);
+                String price = originalPriceInfo.getString("price");
+                String beginAmount = originalPriceInfo.getInt("beginAmount") + "";
+                Price priceObject = new Price(price,beginAmount);
+                originalPriceList.add(priceObject);
+            }
+        }
+        productPrice.setCurrentPrice(priceList);
+        productPrice.setOriginalPrice(originalPriceList);
+        return productPrice;
     }
 
-    private List<Color> convertStringOtherProductToObject(String otherProduct) throws JsonProcessingException {
+    private ProductColorAndSize convertStringOtherProductToObject(String otherProduct){
         String other = otherProduct.trim();
         if (other.endsWith(",")) other = other.substring(0, other.length() - 1);
         String jsonString = "{" + other + "}}" ;
-        List<Color> otherProductList = new ArrayList<>();
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode rootNode = objectMapper.readTree(jsonString);
-        JsonNode skuInfoMapOriginal = rootNode.path("skuModel").path("skuInfoMapOriginal");
-        if (skuInfoMapOriginal.isMissingNode()) {
-            skuInfoMapOriginal = rootNode.path("skuModel").path("skuInfoMap");
+        System.out.println("Get Color");
+        System.out.println(jsonString);
+        ProductColorAndSize productColorAndSize = new ProductColorAndSize();
+
+        JSONObject otherObject = new JSONObject(jsonString);
+        JSONObject modelObject = otherObject.getJSONObject("skuModel");
+        JSONArray skuPropsArray = modelObject.getJSONArray("skuProps");
+        JSONObject colorObject = skuPropsArray.getJSONObject(0);
+        JSONArray colorArray = skuPropsArray.getJSONObject(0).getJSONArray("value");
+
+
+//       Tạo đối tượng Product Color trong dối tượng ProductColorAndSize
+        ProductColor productColor = new ProductColor();
+        productColor.setId(colorObject.getInt("fid"));
+        productColor.setName(colorObject.getString("prop"));
+        List<Color> colorList = new ArrayList<>();
+        for (int i=0; i<colorArray.length();i++){
+            String name = colorArray.getJSONObject(i).getString("name");
+            String imageUrl = colorArray.getJSONObject(i).getString("imageUrl");
+            Color color = new Color(name, imageUrl);
+            colorList.add(color);
         }
-        Iterator<Map.Entry<String, JsonNode>> fields = skuInfoMapOriginal.fields();
-        while (fields.hasNext()) {
-            Map.Entry<String, JsonNode> field = fields.next();
-            String specAttrs = field.getValue().path("specAttrs").asText("N/A");
-            String price = field.getValue().path("price").asText("0.00");
-            String saleCount = field.getValue().path("saleCount").asInt(0) + "";
-            String canBookCount = field.getValue().path("canBookCount").asInt(0) + "";
-            String imageUrl = "N/A";
-            JsonNode skuProps = rootNode.path("skuModel").path("skuProps");
-            if (skuProps.isArray() && skuProps.size() > 0) {
-                for (JsonNode prop : skuProps) {
-                    if (prop.path("fid").asInt() == 3216) {
-                        for (JsonNode value : prop.path("value")) {
-                            String colorName = specAttrs.split(">")[0].trim();
-                            String valueName = value.path("name").asText().trim();
-                            if (valueName.equals(ConvertStringToStandard(colorName))) {
-                                imageUrl = value.path("imageUrl").asText("N/A");
-                                break;
-                            }
-                        }
-                    }
-                }
+        productColor.setColors(colorList);
+
+//        Tạo đối tượng Product Size trong dối tượng ProductColorAndSize
+        JSONObject sizeObject = skuPropsArray.getJSONObject(1);
+        JSONArray sizeArray = skuPropsArray.getJSONObject(1).getJSONArray("value");
+        ProductSize productSize = new ProductSize();
+        productSize.setId(sizeObject.getInt("fid"));
+        productSize.setName(sizeObject.getString("prop"));
+        List<String> sizeList = new ArrayList<>();
+        for (int i = 0; i< sizeArray.length();i++){
+            sizeList.add(sizeArray.getJSONObject(i).getString("name"));
+        }
+        productSize.setSize(sizeList);
+
+//Tạo đối tượng Product Info Map trong dối tượng ProductColorAndSize
+        JSONObject skuInfoMapObject = modelObject.getJSONObject("skuInfoMap");
+        Iterator<String> keys = skuInfoMapObject.keys();
+        List<ProductInfoMap> productInfoMaps = new ArrayList<>();
+        while (keys.hasNext()){
+            String key = keys.next();
+            JSONObject productInfoMapsObject = skuInfoMapObject.getJSONObject(key);
+            ProductInfoMap productInfoMap = new ProductInfoMap();
+            productInfoMap.setId(productInfoMapsObject.getInt("skuId") + "");
+            productInfoMap.setName(productInfoMapsObject.getString("specAttrs"));
+            productInfoMap.setCanBookCount(productInfoMapsObject.getInt("canBookCount"));
+            productInfoMap.setSaleCount(productInfoMapsObject.getInt("saleCount"));
+            if(productInfoMapsObject.has("discountPrice")){
+                productInfoMap.setDiscountPrice(productInfoMapsObject.getString("discountPrice"));
+            }else{
+                productInfoMap.setDiscountPrice("0.00");
             }
-            Color otherProductObject = new Color(imageUrl,specAttrs,canBookCount,price,saleCount);
-            otherProductList.add(otherProductObject);
+            if(productInfoMapsObject.has("price")){
+                productInfoMap.setCurrentPrice(productInfoMapsObject.getString("price"));
+            }else{
+                productInfoMap.setCurrentPrice("0.00");
+            }
+            productInfoMaps.add(productInfoMap);
         }
-        return otherProductList;
+
+        productColorAndSize.setProductColor(productColor);
+        productColorAndSize.setProductSize(productSize);
+        productColorAndSize.setProductInfoMap(productInfoMaps);
+        return productColorAndSize;
     }
 
-    private String ConvertStringToStandard(String NameString){
-        int index = NameString.indexOf("&gt");
-        String rs;
-        if(index != -1){
-            rs = NameString.substring(0,index);
-        }else{
-            rs = NameString;
-        }
-        return rs;
+    private ProductColorAndSize convertStringOtherProductToObject2(String otherProduct){
+        String other = otherProduct.trim();
+        if (other.endsWith(",")) other = other.substring(0, other.length() - 1);
+        String jsonString = "{" + other + "}}" ;
+        System.out.println("Get Color");
+        System.out.println(jsonString);
+        ProductColorAndSize productColorAndSize = new ProductColorAndSize();
 
+        JSONObject otherObject = new JSONObject(jsonString);
+        JSONObject modelObject = otherObject.getJSONObject("distributeSkuModel");
+        JSONArray skuPropsArray = modelObject.getJSONArray("skuProps");
+        JSONObject colorObject = skuPropsArray.getJSONObject(0);
+        JSONArray colorArray = skuPropsArray.getJSONObject(0).getJSONArray("value");
+
+
+//       Tạo đối tượng Product Color trong dối tượng ProductColorAndSize
+        ProductColor productColor = new ProductColor();
+        productColor.setId(colorObject.getInt("fid"));
+        productColor.setName(colorObject.getString("prop"));
+        List<Color> colorList = new ArrayList<>();
+        for (int i=0; i<colorArray.length();i++){
+            String name = colorArray.getJSONObject(i).getString("name");
+            String imageUrl = colorArray.getJSONObject(i).getString("imageUrl");
+            Color color = new Color(name, imageUrl);
+            colorList.add(color);
+        }
+        productColor.setColors(colorList);
+
+//        Tạo đối tượng Product Size trong dối tượng ProductColorAndSize
+        JSONObject sizeObject = skuPropsArray.getJSONObject(1);
+        JSONArray sizeArray = skuPropsArray.getJSONObject(1).getJSONArray("value");
+        ProductSize productSize = new ProductSize();
+        productSize.setId(sizeObject.getInt("fid"));
+        productSize.setName(sizeObject.getString("prop"));
+        List<String> sizeList = new ArrayList<>();
+        for (int i = 0; i< sizeArray.length();i++){
+            sizeList.add(sizeArray.getJSONObject(i).getString("name"));
+        }
+        productSize.setSize(sizeList);
+
+//Tạo đối tượng Product Info Map trong dối tượng ProductColorAndSize
+        JSONObject skuInfoMapObject = modelObject.getJSONObject("skuInfoMap");
+        Iterator<String> keys = skuInfoMapObject.keys();
+        List<ProductInfoMap> productInfoMaps = new ArrayList<>();
+        while (keys.hasNext()){
+            String key = keys.next();
+            JSONObject productInfoMapsObject = skuInfoMapObject.getJSONObject(key);
+            ProductInfoMap productInfoMap = new ProductInfoMap();
+            productInfoMap.setId(productInfoMapsObject.getInt("skuId") + "");
+            productInfoMap.setName(productInfoMapsObject.getString("specAttrs"));
+            productInfoMap.setCanBookCount(productInfoMapsObject.getInt("canBookCount"));
+            productInfoMap.setSaleCount(productInfoMapsObject.getInt("saleCount"));
+            if(productInfoMapsObject.has("discountPrice")){
+                productInfoMap.setDiscountPrice(productInfoMapsObject.getString("discountPrice"));
+            }else{
+                productInfoMap.setDiscountPrice("0.00");
+            }
+            if(productInfoMapsObject.has("price")){
+                productInfoMap.setCurrentPrice(productInfoMapsObject.getString("price"));
+            }else{
+                productInfoMap.setCurrentPrice("0.00");
+            }
+            productInfoMaps.add(productInfoMap);
+        }
+
+        productColorAndSize.setProductColor(productColor);
+        productColorAndSize.setProductSize(productSize);
+        productColorAndSize.setProductInfoMap(productInfoMaps);
+        return productColorAndSize;
     }
 
-    private ProductDTO convertProductInfoFromProductInfoString(String productInfoString){
-        String jsonString = "{" + productInfoString + "}";
-//        System.out.println("convertProductInfoFromProductInfoString");
-//        System.out.println(jsonString);
+    private String getOfferIdFromUrl(String urlString){
+       int startIndex = urlString.indexOf("offer/") + 6;
+       int endIndex =urlString.indexOf(".html");
+       String offerId = urlString.substring(startIndex,endIndex);
+       return offerId;
+    }
+
+    private ProductDetail convertProductInfoFromProductInfoString(String productInfoString){
+        String jsonString = "{" + productInfoString;
+        System.out.println("convertProductInfoFromProductInfoString");
+        System.out.println(jsonString);
         JSONObject jsonObject = new JSONObject(jsonString);
         JSONArray dataArray = null;
         if (jsonObject.has("data")) {
@@ -194,74 +353,51 @@ public class CrawlController {
         } else if (jsonObject.has("propsList")) {
             dataArray = jsonObject.getJSONArray("propsList");
         }
-        String pId = "",pBrand = "", pModel = "",pStyle = "",pMetarial ="",pSaleArea ="",pColor="",pSize="",pRelease = "";
+        ProductDetail productDetail = new ProductDetail();
+        productDetail.setName("商品属性");
+        List<ProductInfo> listProductInfos = new ArrayList<>();
         for (int i= 0 ; i< dataArray.length();i++){
             JSONObject item = dataArray.getJSONObject(i);
-            String name = item.getString("name");
-
-            switch (name){
-                case "产品编号":
-                    pId += item.getString("value");
-                    break;
-                case "货号":
-                    pId += item.getString("value");
-                    break;
-                case "品牌":
-                    pBrand += item.getString("value");
-                    break;
-                case "图案":
-                    pModel += item.getString("value");
-                    break;
-                case "型号":
-                    pModel += item.getString("value");
-                    break;
-                case "面料名称":
-                    pMetarial += item.getString("value");
-                    break;
-                case "主面料成分":
-                    pMetarial += item.getString("value");
-                    break;
-                case "主面料成分含量":
-                    pMetarial += item.getString("value");
-                    break;
-                case "主面料成分2":
-                    pMetarial += item.getString("value");
-                    break;
-                case "主面料成分2含量":
-                    pMetarial += item.getString("value");
-                    break;
-                case "材质":
-                    pMetarial += item.getString("value");
-                    break;
-                case "主要下游销售地区2":
-                    pSaleArea += item.getString("value");
-                    break;
-                case "主要下游销售地区1":
-                    pSaleArea += item.getString("value");
-                    break;
-                case "主要销售地区":
-                    pSaleArea += item.getString("value");
-                    break;
-                case "颜色":
-                    pColor += item.getString("value");
-                    System.out.println(pColor);
-                    break;
-                case "尺码":
-                    pSize += item.getString("value");
-                    break;
-                case "尺寸":
-                    pSize += item.getString("value");
-                    break;
-                case "上市年份/季节":
-                    pRelease += item.getString("value");
-                    break;
-                case "风格":
-                    pStyle += item.getString("value");
+            int fid = 0;
+            if(item.has("fid")){
+                fid = item.getInt("fid");
             }
+            String name = item.getString("name");
+            String value = item.getString("value");
+            ProductInfo info = new ProductInfo(fid,name,value);
+            listProductInfos.add(info);
         }
-        ProductDTO productInfo = new ProductDTO(pId,pStyle,pMetarial,pSaleArea,pModel,pSize,pBrand,pColor,pRelease);
-        System.out.println(productInfo);
-        return productInfo;
+        productDetail.setProductInfos(listProductInfos);
+        return productDetail;
+    }
+
+    private List<String> convertImageListFromImageListJson(String imageListJson){
+        String otherJson = imageListJson.trim();
+        if (otherJson.endsWith(",")) otherJson = otherJson.substring(0, otherJson.length() - 1);
+        String jsonString = "{" + otherJson + "}";
+//        System.out.println(jsonString);
+        JSONObject jsonObject = new JSONObject(jsonString);
+        JSONArray jsonArray = jsonObject.getJSONArray("offerImgList");
+        List<String> listImage = new ArrayList<>();
+        if(jsonArray.length() > 0){
+            for(int i = 0; i<jsonArray.length();i++){
+                listImage.add(jsonArray.getString(i));
+            }
+            return listImage;
+        }
+        return null;
+    }
+
+    private String getVideoUrlFromVideoJson(String videoJson){
+        String jsonString = "{" + videoJson + "}";
+        JSONObject ObjectJson = new JSONObject(jsonString);
+        JSONObject videoJsonObject = ObjectJson.getJSONObject("video");
+        if (videoJsonObject.has("videoUrl")) {
+            String videoUrl = videoJsonObject.getString("videoUrl");
+            return videoUrl;
+        } else {
+            return null;
+        }
     }
 
 }

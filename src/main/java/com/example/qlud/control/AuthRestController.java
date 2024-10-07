@@ -11,6 +11,7 @@ import com.example.qlud.requets.RefreshTokenRequest;
 import com.example.qlud.requets.RegisterRequest;
 import com.example.qlud.response.LoginResponse;
 import com.example.qlud.response.MessageResponse;
+import com.example.qlud.response.RecaptchaResponse;
 import com.example.qlud.response.RefreshTokenResponse;
 import com.example.qlud.service.RefreshTokenService;
 import com.example.qlud.service.UserDetailImpl;
@@ -27,6 +28,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.Cookie;
 import java.util.HashMap;
@@ -91,6 +93,17 @@ public class AuthRestController {
 
     @PostMapping("/register")
     public ResponseEntity<?> registerNewAccount(@RequestBody RegisterRequest request){
+        String recaptchaToken = request.getRecaptchaToken();
+        String recaptchaSecret = "6LfWglUqAAAAAFUUhiKNubZtN4MqluDN62b9ixeK";
+
+        String gooleUrl = "https://www.google.com/recaptcha/api/siteverify";
+        RestTemplate restTemplate = new RestTemplate();
+        String requestUrl = gooleUrl + "?secret=" + recaptchaSecret + "&response=" + recaptchaToken;
+        RecaptchaResponse recaptchaResponse = restTemplate.postForObject(requestUrl, null, RecaptchaResponse.class);
+        if (!recaptchaResponse.isSuccess()) {
+            MessageResponse mess = new MessageResponse("Invalid reCAPTCHA");
+            return new ResponseEntity<>(mess, HttpStatus.BAD_REQUEST);
+        }
         if(userRepo.existsByUserEmail(request.getUserEmail())){
             MessageResponse mess = new MessageResponse("Email has been registered");
             return new ResponseEntity<>(mess, HttpStatus.BAD_REQUEST);

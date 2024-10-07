@@ -32,24 +32,19 @@ public class AppController {
     @GetMapping("/show-all-product")
     public String ShowAllProduct(Model model){
         List<Product> listProduct = repo.findAll();
-        List<GetAllProductResponse> listResult = listProduct.stream()
-                .map(this::convertProductResponse)
-                .collect(Collectors.toList());
-        model.addAttribute("result",listResult);
+        model.addAttribute("result",listProduct);
+
         return "all-product-page";
     }
 
     private GetAllProductResponse convertProductResponse(Product product){
         GetAllProductResponse productResponse = new GetAllProductResponse();
-        productResponse.setProductId(product.getProductId());
-        productResponse.setProductBrand(product.getProductBrand());
-        productResponse.setProductColor(product.getProductColor());
-        productResponse.setProductSize(product.getProductSize());
-        productResponse.setProductType(product.getProductType());
-        productResponse.setMaterial(product.getMaterial());
-        productResponse.setProductRelease(product.getProductRelease());
-        productResponse.setProductSaleArea(product.getProductSaleArea());
-        productResponse.setPrices(productResponse.getPrices());
+        productResponse.setOfferId(product.getOfferId());
+        productResponse.setProductTitle(product.getProductTitle());
+        productResponse.setSize(product.getProductColorAndSize().getProductSize().getSize());
+        productResponse.setCurrentPrice(product.getProductPrices().getCurrentPrice());
+        productResponse.setOriginalPrice(product.getProductPrices().getOriginalPrice());
+        System.out.println(productResponse);
         return  productResponse;
     }
 }
