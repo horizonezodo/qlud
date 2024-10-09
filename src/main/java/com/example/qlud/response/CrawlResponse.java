@@ -19,5 +19,6 @@ public class CrawlResponse {
     private ProductPrice productPrices;
     private List<String> imageProductList;
     private String videoUrl;
+    private ElectricOtherProduct electricOtherProduct;
     private List<String> productImageDetail;
 }

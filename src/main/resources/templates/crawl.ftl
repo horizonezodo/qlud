@@ -17,6 +17,7 @@
 
     <!-- bootstrap core css -->
     <link rel="stylesheet" type="text/css" href="/css/bootstrap.css" />
+    <link rel="stylesheet" type="text/css" href="/css/style.css"/>
 
     <!-- fonts style -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -39,57 +40,6 @@
 <div class="hero_area">
     <!-- header section strats -->
     <header class="header_section">
-        <div class="header_top">
-            <div class="container-fluid header_top_container">
-                <div class="lang_box dropdown">
-                    <a href="#" title="Language" class="nav-link" data-toggle="dropdown" aria-expanded="true">
-                        <img src="/img/flag-uk.png" alt="flag" class=" " title="United Kingdom"> <i class="fa fa-angle-down " aria-hidden="true"></i>
-                    </a>
-                    <div class="dropdown-menu ">
-                        <a href="#" class="dropdown-item">
-                            <img src="/img/flag-france.png" class="" alt="flag">
-                        </a>
-                    </div>
-                    <span>
-              English
-            </span>
-                </div>
-                <div class="contact_nav">
-                    <a href="">
-                        <i class="fa fa-phone" aria-hidden="true"></i>
-                        <span>
-                Call : +01 123455678990
-              </span>
-                    </a>
-                    <a href="">
-                        <i class="fa fa-envelope" aria-hidden="true"></i>
-                        <span>
-                Email : demo@gmail.com
-              </span>
-                    </a>
-                    <a href="">
-                        <i class="fa fa-map-marker" aria-hidden="true"></i>
-                        <span>
-                Location
-              </span>
-                    </a>
-                </div>
-                <div class="social_box">
-                    <a href="">
-                        <i class="fa fa-facebook" aria-hidden="true"></i>
-                    </a>
-                    <a href="">
-                        <i class="fa fa-twitter" aria-hidden="true"></i>
-                    </a>
-                    <a href="">
-                        <i class="fa fa-linkedin" aria-hidden="true"></i>
-                    </a>
-                    <a href="">
-                        <i class="fa fa-instagram" aria-hidden="true"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
         <div class="header_bottom">
             <div class="container-fluid">
                 <nav class="navbar navbar-expand-lg custom_nav-container ">
@@ -191,7 +141,7 @@
                             <div class="price" id="priceDiv"></div>
                         </div>
                     </div>
-                    <div class="product-info">
+                    <div class="product-color-info" id="product-color-info" style="width: 80%;">
                         <p id="color-name"></p>
                         <div id="color-buttons"></div>
                     </div>
@@ -214,6 +164,19 @@
                 <div id="videoDemo">
                 </div>
             </div>
+
+            <div class="product-image-detail" id="product-image-detail">
+
+            </div>
+        </div>
+    </div>
+
+    <div id="dialog" class="dialog" style="display: none">
+        <div class="dialog-content">
+            <span class="close-button">&times;</span>
+            <h2 id="dialog-title">Dialog Title</h2>
+            <p id="dialog-message">This is a simple dialog box!</p>
+            <button id="confirm-button">OK</button>
         </div>
     </div>
 </section>
@@ -221,28 +184,6 @@
 
 <!-- info section -->
 <section class="info_section ">
-
-    <div class="container">
-        <div class="contact_nav">
-            <a href="">
-                <i class="fa fa-phone" aria-hidden="true"></i>
-                <span>
-            Call : +01 123455678990
-          </span>
-            </a>
-            <a href="">
-                <i class="fa fa-envelope" aria-hidden="true"></i>
-                <span>
-            Email : demo@gmail.com
-          </span>
-            </a>
-            <a href="">
-                <i class="fa fa-map-marker" aria-hidden="true"></i>
-                <span>
-            Location
-          </span>
-            </a>
-        </div>
 
         <div class="info_top ">
             <div class="row info_main_row">
@@ -377,8 +318,6 @@
         const websiteUrl = document.getElementById('websiteUrl').value;
         const cookieData = document.getElementById('cookieData').value;
         const cookieEncodeData = encodeURIComponent(cookieData);
-        console.log(cookieEncodeData);
-        console.log('URL nhập vào:', websiteUrl);
         const CrawlData = {
             crawlUrl: websiteUrl,
             cookieData: cookieEncodeData,
@@ -391,10 +330,17 @@
             },
             body: JSON.stringify({ crawlUrl: websiteUrl,cookieData:cookieEncodeData })
         })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        showDialog("Error", errorData.message);
+                        throw new Error(errorData.message);
+                    });
+                }
+                return response.json()
+            })
             .then(data => {
                 console.log(data)
-
                 document.getElementById("pLink").innerText = data.productTitle || '';
                 document.getElementById("pLink").setAttribute("href",data.link || '');
 
@@ -404,21 +350,18 @@
                     ? data.productPrices.originalPrice
                     : data.productPrices.currentPrice;
 
-                console.log(priceDisplay)
-
                 const maxPrice = Math.max(...priceDisplay.map(item => parseFloat(item.price)));
-                console.log(maxPrice)
 
                 const priceDiv = document.getElementById("priceDiv");
+                priceDiv.innerHTML= ''
                 priceDiv.classList.add("priceDiv");
                 priceDisplay.forEach(dataPrice => {
-                    console.log(dataPrice.price + " amount " + dataPrice.priceAmount)
                     const priceContent = document.createElement("div")
                     priceContent.classList.add("priceContent")
 
                     const h2 = document.createElement("p");
                     h2.classList.add('priceInt');
-                    h2.innerHTML = dataPrice.price;
+                    h2.innerHTML = "¥ " +  dataPrice.price;
 
                     const priceConnect = document.createElement("p");
                     priceConnect.classList.add('priceConnect');
@@ -432,75 +375,277 @@
                     priceContent.appendChild(p);
                     priceDiv.appendChild(priceContent)
                 })
+                console.log(data.productColorAndSize)
+                if(data.productColorAndSize.productColor === null && data.productColorAndSize.productSize === null){
+                    console.log("abc")
+                        document.getElementById("product-color-info").innerHTML = '';
+                        const sizeTable = document.getElementById("sizeDetails");
+                        sizeTable.innerHTML = '';
+                        const showData = data.productColorAndSize.productInfoMap;
+                        showData.forEach(showData => {
+                            document.getElementById("size-name").innerText = '采购量';
 
-                const sizeTable = document.getElementById("sizeDetails");
-                document.getElementById("size-name").innerText = data.productColorAndSize.productSize.name;
+                            const row = document.createElement("tr");
+                            const priceCell = document.createElement("td");
+                            const priceData = showData.discountPrice || showData.currentPrice || maxPrice;
+                            const colorPrice = priceData + " 元";
+                            priceCell.innerText = priceData ? colorPrice : "N/A";
+                            priceCell.classList.add("bold-text")
+                            row.appendChild(priceCell);
 
-                const otherImageProductDiv = document.getElementById("color-buttons");
-                document.getElementById("color-name").innerText = data.productColorAndSize.productColor.name;
+                            const canBookCountCell = document.createElement("td")
+                            canBookCountCell.innerText = showData ? showData.canBookCount : "N/A";
+                            row.appendChild(canBookCountCell);
 
-                data.productColorAndSize.productColor.colors.forEach(imageOtherProduct =>{
-                   const button = document.createElement("button");
-                   button.classList.add('color-button');
-                   button.innerHTML = `<img src="` + imageOtherProduct.imageUrl + `" alt="` + imageOtherProduct.name + `" style="width: 36px; height: 36px; margin-right: 10px"/>` + imageOtherProduct.name;
-                   button.addEventListener("click",() => updateTable(imageOtherProduct.name));
-                   otherImageProductDiv.appendChild(button);
+                            const saleCountCell = document.createElement("td")
+                            if(showData.canBookCount !== 0){
+                                saleCountCell.classList.add("saleCountClass")
+                                const saleCountDiv = document.createElement("div")
+                                saleCountDiv.classList.add("sale-count-div")
+                                const decreamentBtn = document.createElement("button")
+                                decreamentBtn.classList.add("decreamentBtn")
+                                decreamentBtn.id = "decrementBtn"
+                                decreamentBtn.innerHTML = "-"
 
-                });
+                                const canBookCellText = document.createElement("p");
+                                canBookCellText.id = "counterLabel"
+                                canBookCellText.classList.add("canBookText")
+                                canBookCellText.innerText = showData ? showData.saleCount : "N/A";
 
-                function updateTable(selectorColorName){
-                    sizeTable.innerHTML='';
-                    data.productColorAndSize.productSize.size.forEach(size => {
-                        const detail = data.productColorAndSize.productInfoMap.find(detail =>
-                        {
-                            const [colorName, sizeName] = detail.name.split('&gt;');
-                            return colorName.trim() === selectorColorName && sizeName.trim() === size.trim()
+                                const incrementBtn = document.createElement("button")
+                                incrementBtn.classList.add("incrementBtn")
+                                incrementBtn.id = "incrementBtn"
+                                incrementBtn.innerHTML = "+"
+
+                                saleCountDiv.appendChild(decreamentBtn)
+                                saleCountDiv.appendChild(canBookCellText)
+                                saleCountDiv.appendChild(incrementBtn)
+                                saleCountCell.appendChild(saleCountDiv)
+                            }else{
+                                saleCountCell.innerText="缺货";
+                            }
+                            row.appendChild(saleCountCell);
+
+                            sizeTable.appendChild(row)
+                        })
+                }
+                else {
+                    console.log("asa")
+                    const sizeTable = document.getElementById("sizeDetails");
+                    // sizeTable.innerHTML = '';
+
+                    if(data.productColorAndSize.productColor.colors.length > 0 && data.productColorAndSize.productSize.size.length > 0){
+                        console.log("abs")
+                        document.getElementById("size-name").innerText = data.productColorAndSize.productSize.name;
+                        const otherImageProductDiv = document.getElementById("color-buttons");
+                        otherImageProductDiv.innerHTML=''
+                        console.log("qua thẻ div")
+                        const buttonLabel = document.getElementById("color-name");
+                            buttonLabel.innerHTML = '';
+                            console.log("qua label")
+                            buttonLabel.innerText = data.productColorAndSize.productColor.name;
+
+                        data.productColorAndSize.productColor.colors.forEach(imageOtherProduct => {
+                            const button = document.createElement("button");
+                            button.classList.add('color-button');
+                            if(imageOtherProduct.imageUrl === "" || imageOtherProduct.imageUrl === undefined || imageOtherProduct.imageUrl === null){
+                                button.innerHTML = imageOtherProduct.name;
+                            }
+                            else{
+                                button.innerHTML = `<img src="` + imageOtherProduct.imageUrl + `" alt="` + imageOtherProduct.name + `" style="width: 36px; height: 36px; margin-right: 10px"/>` + imageOtherProduct.name;
+                            }
+                            button.addEventListener("click", () => updateTable(imageOtherProduct.name));
+                            otherImageProductDiv.appendChild(button);
+
                         });
 
-                        console.log(detail)
+                        function updateTable(selectorColorName) {
+                            sizeTable.innerHTML = '';
+                            data.productColorAndSize.productSize.size.forEach(size => {
+                                const detail = data.productColorAndSize.productInfoMap.find(detail => {
+                                    if(detail.name.includes("&gt;")){
+                                        const [colorName, sizeName] = detail.name.split('&gt;');
+                                        return colorName.trim() === selectorColorName.trim() && sizeName.trim() === size.trim()
+                                    }else{
+                                        return detail.name.trim() === selectorColorName.trim() || detail.name.trim() === size.trim()
+                                    }
 
-                        const row = document.createElement("tr");
-                        const sizeCell = document.createElement("td");
-                        sizeCell.innerText = size;
-                        row.appendChild(sizeCell);
+                                });
 
-                        const priceCell = document.createElement("td")
-                        const priceData = detail.discountPrice ? detail.discountPrice : detail.currentPrice;
-                        const colorPrice = ((parseFloat(priceData) ===0)? maxPrice : priceData) + " 元"
-                        priceCell.innerText = detail? colorPrice : "N/A";
-                        row.appendChild(priceCell);
-                        sizeTable.appendChild(row);
+                                const row = document.createElement("tr");
+                                const sizeCell = document.createElement("td");
+                                sizeCell.classList.add("bold-text")
+                                sizeCell.innerText = size;
+                                row.appendChild(sizeCell);
 
-                        const canBookCountCell = document.createElement("td")
-                        canBookCountCell.innerText = detail? detail.canBookCount : "N/A";
-                        row.appendChild(canBookCountCell);
+                                const priceCell = document.createElement("td")
+                                priceCell.classList.add("bold-text")
+                                const priceData = detail.discountPrice ? detail.discountPrice : detail.currentPrice;
+                                const colorPrice = ((parseFloat(priceData) === 0) ? maxPrice : priceData) + " 元"
+                                priceCell.innerText = detail ? colorPrice : "N/A";
+                                row.appendChild(priceCell);
+                                sizeTable.appendChild(row);
 
-                        const saleCountCell = document.createElement("td")
-                        saleCountCell.classList.add("saleCountClass")
-                        const decreamentBtn = document.createElement("button")
-                        decreamentBtn.classList.add("decreamentBtn")
-                        decreamentBtn.id = "decrementBtn"
-                        decreamentBtn.innerHTML = "-"
+                                const canBookCountCell = document.createElement("td")
+                                canBookCountCell.innerText = detail ? detail.canBookCount : "N/A";
+                                row.appendChild(canBookCountCell);
 
-                        const canBookCellText = document.createElement("p");
-                        canBookCellText.id = "counterLabel"
-                        canBookCellText.classList.add("canBookText")
-                        canBookCellText.innerText = detail? detail.saleCount : "N/A";
+                                const saleCountCell = document.createElement("td")
+                                if(detail.canBookCount === 0){
+                                    saleCountCell.innerText = "缺货";
+                                }else{
+                                    saleCountCell.classList.add("saleCountClass")
+                                    const saleCountDiv = document.createElement("div");
+                                    saleCountDiv.classList.add("sale-count-div");
+                                    const decreamentBtn = document.createElement("button")
+                                    decreamentBtn.classList.add("decreamentBtn")
+                                    decreamentBtn.id = "decrementBtn"
+                                    decreamentBtn.innerHTML = "-"
 
-                        const incrementBtn = document.createElement("button")
-                        incrementBtn.classList.add("incrementBtn")
-                        incrementBtn.id = "incrementBtn"
-                        incrementBtn.innerHTML = "+"
+                                    const canBookCellText = document.createElement("p");
+                                    canBookCellText.id = "counterLabel"
+                                    canBookCellText.classList.add("canBookText")
+                                    canBookCellText.innerText = detail ? detail.saleCount : "N/A";
 
-                        saleCountCell.appendChild(decreamentBtn)
-                        saleCountCell.appendChild(canBookCellText)
-                        saleCountCell.appendChild(incrementBtn)
-                        row.appendChild(saleCountCell);
+                                    const incrementBtn = document.createElement("button")
+                                    incrementBtn.classList.add("incrementBtn")
+                                    incrementBtn.id = "incrementBtn"
+                                    incrementBtn.innerHTML = "+"
 
+                                    saleCountDiv.appendChild(decreamentBtn)
+                                    saleCountDiv.appendChild(canBookCellText)
+                                    saleCountDiv.appendChild(incrementBtn)
+                                    saleCountCell.appendChild(saleCountDiv)
+                                }
+                                row.appendChild(saleCountCell);
+
+                            });
+                        }
+
+                        updateTable(data.productColorAndSize.productColor.colors[0].name);
+                    }
+                    else if (data.productColorAndSize.productColor.colors.length > 0){
+                        document.getElementById("size-name").innerText = data.productColorAndSize.productColor.name;
+                            sizeTable.innerHTML = '';
+                        document.getElementById("product-color-info").innerHTML = '';
+                            const showData = data.productColorAndSize.productColor.colors;
+                            showData.forEach(size => {
+                                const detail = data.productColorAndSize.productInfoMap.find(detail => {
+                                    return detail.name.trim() === size.name.trim();
+                                });
+                                // console.log("success")
+                                const row = document.createElement("tr");
+                                const sizeCell = document.createElement("td");
+                                sizeCell.classList.add("table-size-name");
+                                const sizeName = document.createElement("p")
+                                sizeName.classList.add("bold-text")
+                                sizeName.innerText = detail.name;
+                                const sizeImg = document.createElement("img");
+                                sizeImg.classList.add("size-img");
+                                sizeImg.src = size.imageUrl;
+                                sizeCell.appendChild(sizeImg);
+                                sizeCell.appendChild(sizeName);
+                                row.appendChild(sizeCell);
+
+                                const priceCell = document.createElement("td")
+                                priceCell.classList.add("bold-text")
+                                const priceData = detail.discountPrice ? detail.discountPrice : detail.currentPrice;
+                                const colorPrice = ((parseFloat(priceData) === 0) ? maxPrice : priceData) + " 元"
+                                priceCell.innerText = detail ? colorPrice : "N/A";
+                                row.appendChild(priceCell);
+                                sizeTable.appendChild(row);
+
+                                const canBookCountCell = document.createElement("td")
+                                canBookCountCell.innerText = detail ? detail.canBookCount : "N/A";
+                                row.appendChild(canBookCountCell);
+
+                                const saleCountCell = document.createElement("td")
+                                if(detail.canBookCount !== 0){
+                                    saleCountCell.classList.add("saleCountClass")
+                                    const saleCountDiv = document.createElement("div");
+                                    saleCountDiv.classList.add("sale-count-div");
+                                    const decreamentBtn = document.createElement("button")
+                                    decreamentBtn.classList.add("decreamentBtn")
+                                    decreamentBtn.id = "decrementBtn"
+                                    decreamentBtn.innerHTML = "-"
+
+                                    const canBookCellText = document.createElement("p");
+                                    canBookCellText.id = "counterLabel"
+                                    canBookCellText.classList.add("canBookText")
+                                    canBookCellText.innerText = detail ? detail.saleCount : "N/A";
+
+                                    const incrementBtn = document.createElement("button")
+                                    incrementBtn.classList.add("incrementBtn")
+                                    incrementBtn.id = "incrementBtn"
+                                    incrementBtn.innerHTML = "+"
+
+                                    saleCountDiv.appendChild(decreamentBtn)
+                                    saleCountDiv.appendChild(canBookCellText)
+                                    saleCountDiv.appendChild(incrementBtn)
+                                    saleCountCell.appendChild(saleCountDiv)
+                                }else{
+                                    saleCountCell.innerText="缺货";
+                                }
+                                row.appendChild(saleCountCell);
+
+                        })
+                    }
+                    else{
+                        document.getElementById("product-color-info").innerHTML = '';
+                        sizeTable.innerHTML = '';
+                        data.productColorAndSize.productSize.size.forEach(size => {
+                            const detail = data.productColorAndSize.productInfoMap.find(detail => {
+                                    return detail.name.trim() === size.trim()
+                            });
+                            const row = document.createElement("tr");
+                            const sizeCell = document.createElement("td");
+                            sizeCell.classList.add("bold-text")
+                            sizeCell.innerText = size;
+                            row.appendChild(sizeCell);
+
+                            const priceCell = document.createElement("td")
+                            priceCell.classList.add("bold-text")
+                            const priceData = detail.discountPrice ? detail.discountPrice : detail.currentPrice;
+                            const colorPrice = ((parseFloat(priceData) === 0) ? maxPrice : priceData) + " 元"
+                            priceCell.innerText = detail ? colorPrice : "N/A";
+                            row.appendChild(priceCell);
+                            sizeTable.appendChild(row);
+
+                            const canBookCountCell = document.createElement("td")
+                            canBookCountCell.innerText = detail ? detail.canBookCount : "N/A";
+                            row.appendChild(canBookCountCell);
+
+                            const saleCountCell = document.createElement("td");
+                            if(detail.canBookCount !== 0){
+                                saleCountCell.classList.add("saleCountClass");
+                                const saleCountDiv = document.createElement("div");
+                                saleCountDiv.classList.add("sale-count-div");
+                                const decreamentBtn = document.createElement("button");
+                                decreamentBtn.classList.add("decreamentBtn");
+                                decreamentBtn.id = "decrementBtn";
+                                decreamentBtn.innerHTML = "-";
+
+                                const canBookCellText = document.createElement("p");
+                                canBookCellText.id = "counterLabel";
+                                canBookCellText.classList.add("canBookText");
+                                canBookCellText.innerText = detail ? detail.saleCount : "N/A";
+
+                                const incrementBtn = document.createElement("button");
+                                incrementBtn.classList.add("incrementBtn");
+                                incrementBtn.id = "incrementBtn";
+                                incrementBtn.innerHTML = "+";
+
+                                saleCountDiv.appendChild(decreamentBtn);
+                                saleCountDiv.appendChild(canBookCellText);
+                                saleCountDiv.appendChild(incrementBtn);
+                                saleCountCell.appendChild(saleCountDiv);
+                            }else{
+                                saleCountCell.innerText='缺货';
+                            }
+                            row.appendChild(saleCountCell);
                     });
+                    }
                 }
-
-                updateTable(data.productColorAndSize.productColor.colors[0].name);
 
                 imageList = data.imageProductList;
                 displayMainImage(currentImageIndex);
@@ -543,6 +688,7 @@
 
                 document.getElementById('product-table-name').innerText = data.productDetail.name || ''
                 const tbody = document.querySelector('#product-table tbody');
+                tbody.innerHTML='';
                 const productDetail = data.productDetail;
                 for(let i = 0; i<productDetail.productInfos.length;i+=4 ){
                     const row = document.createElement("tr");
@@ -571,7 +717,9 @@
 
 
                 const videoDiv = document.getElementById("videoDemo");
+                videoDiv.innerHTML=''
                 const titleVideo = document.getElementById("video-title");
+                titleVideo.innerText=''
                 if(typeof data.videoUrl !== 'undefined' && data.videoUrl !== null && data.videoUrl !== '') {
                     titleVideo.innerHTML = "Product Demo";
                     const videoProduct = document.createElement("video");
@@ -583,9 +731,37 @@
                     videoDiv.appendChild(videoProduct);
                 }
 
+                const imageDetail = document.getElementById("product-image-detail");
+                imageDetail.innerHTML = '';
+                const detailHeader = document.createElement("h4");
+                const colorSpace = document.createElement("p")
+                colorSpace.classList.add("spanColor");
+                colorSpace.innerText="|";
+                detailHeader.appendChild(colorSpace);
+                detailHeader.classList.add("detail-header");
+                detailHeader.innerText = '商品描述';
+                const detailImage = document.createElement("div");
+                detailImage.classList.add("product-detail-list-image");
+                detailImage.innerHTML ='';
+                data.productImageDetail.forEach(img => {
+                    const image = document.createElement("img");
+                    image.classList.add("product-detail-img");
+                    image.src = img;
+                    detailImage.appendChild(image);
+
+                })
+                imageDetail.appendChild(detailHeader);
+                imageDetail.appendChild(detailImage);
+
                 document.getElementById('productDetails').style.display = 'block';
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error =>{
+                if(error.toLowerCase().indexOf("can not read".toLowerCase()) !== -1){
+                    showDialog("Eror", "Sorry we got some error");
+                }else{
+                    showDialog("Error", error.message);
+                }
+            });
     });
     function displayMainImage(index) {
         // const mainImage = document.getElementById('mainImage');
@@ -627,12 +803,12 @@
     document.getElementById('incrementBtn').addEventListener('click', function() {
         counter++;
         counterLabel.textContent = counter;
-        console.log("increment attachment");
+        // console.log("increment attachment");
     });
     document.getElementById('decrementBtn').addEventListener('click', function() {
         counter--;
         counterLabel.textContent = counter;
-        console.log("decrement attachment");
+        // console.log("decrement attachment");
     });
 </script>
 <#--Script for logout btn-->
@@ -642,7 +818,7 @@
 
         const accessToken = localStorage.getItem("accessToken");
         if (!accessToken) {
-            console.error("accessToken is missing");
+            // console.error("accessToken is missing");
             return;
         }
 
@@ -659,17 +835,18 @@
                 if (response.ok) {
                     localStorage.removeItem("accessToken");
                     localStorage.removeItem("refreshToken");
-                    console.log('Logout successful');
+                    // console.log('Logout successful');
                     window.location.href = '/';
                 } else {
-                    console.error('Logout failed');
+                    // console.error('Logout failed');
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                // console.error('Error:', error);
             });
     });
 </script>
+<script src='/js/dialog.js'></script>
 </body>
 
 </html>

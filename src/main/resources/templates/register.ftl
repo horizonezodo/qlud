@@ -12,11 +12,21 @@
 
     <!-- CSS INCLUDE -->
     <link rel="stylesheet" type="text/css" id="theme" href="/css/theme-default.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/style.css"/>
     <!-- EOF CSS INCLUDE -->
 </head>
 <body>
 
 <div class="login-container lightmode">
+
+    <div id="dialog" class="dialog" style="display: none">
+        <div class="dialog-content">
+            <span class="close-button">&times;</span>
+            <h2 id="dialog-title">Dialog Title</h2>
+            <p id="dialog-message">This is a simple dialog box!</p>
+            <button id="confirm-button">OK</button>
+        </div>
+    </div>
 
     <div class="login-box animated fadeInDown">
         <div class="login-logo"></div>
@@ -86,13 +96,15 @@
     </div>
 
 </div>
+
+<#--Xử lý sau khi người dùng đăng nhập-->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('registrationForm').addEventListener('submit', async function(event) {
             event.preventDefault();
             const recaptchaResponse = grecaptcha.getResponse();
             if (!recaptchaResponse) {
-                alert("Please complete the reCAPTCHA");
+                showDialog("Đăng ký thất bại", "Please complete reCaptcha");
                 return;
             }
             const username = document.querySelector('input[name="username"]').value;
@@ -102,7 +114,7 @@
             const confirmPassword = document.querySelector('input[name="cofirm-password"]').value;
 
             if (password !== confirmPassword) {
-                alert("Mật khẩu không khớp! Vui lòng kiểm tra lại.");
+                showDialog("Đăng ký thất bại", "Mật khẩu không khớp")
                 return;
             }
             const registerData = {
@@ -123,21 +135,21 @@
             });
 
                 if (response.ok) {
-                    window.location.href = `/?username=` + username;
-                    // window.location.href = `/`;
+                    window.location.href = `/?username=` + email;
                 } else {
                     const errorData = await response.json();
-                    alert(errorData.message || 'Đăng ký thất bại!');
+                    showDialog("Đăng ký thất bại", errorData.message)
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Đã xảy ra lỗi trong quá trình đăng ký. Vui lòng thử lại.');
+                showDialog("Đã xảy ra lỗi ", error)
             }
         });
     });
 </script>
 
 <script src='https://www.google.com/recaptcha/api.js'></script>
+<script src='/js/dialog.js'></script>
 </body>
 </html>
 

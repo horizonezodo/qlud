@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,7 +61,7 @@ public class AuthRestController {
     private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request){
+    public ResponseEntity<?> login(@RequestBody LoginRequest request, HttpServletResponse cookieResponse){
         Authentication authentication = manager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
         UserDetailImpl userDetail = (UserDetailImpl) authentication.getPrincipal();
@@ -71,15 +72,6 @@ public class AuthRestController {
             jwt = until.generateJwtTokenForLoginUsingPhone(userDetail);
         }
         String redisToken = until.generateTokenFromUsername(request.getUsername());
-        HttpHeaders headers = new HttpHeaders();
-        if(request.isRememberMe()){
-            saveUserCredentialsInRedis(request.getUsername(), request.getPassword());
-            Cookie cookie = new Cookie("rememberMeToken", redisToken);
-            cookie.setMaxAge(7 * 24 * 60 * 60);
-            cookie.setHttpOnly(true);
-            headers.add("Set-Cookie","rememberMeToken=" + redisToken + "; Max-Age=604800; HttpOnly; Path=/" );
-
-        }
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetail.getId());
         LoginResponse response = new LoginResponse();
         response.setUserName(userDetail.getUsername());
@@ -88,6 +80,15 @@ public class AuthRestController {
         response.setUserRole(userDetail.getUserRole());
         response.setAccessToken(jwt);
         response.setRefreshToken(refreshToken.getToken());
+        if(request.isRememberMe()){
+            saveUserCredentialsInRedis(request.getUsername(), request.getPassword());
+            Cookie cookie = new Cookie("rememberMeToken", redisToken);
+            cookie.setMaxAge(7 * 24 * 60 * 60);
+            cookie.setHttpOnly(true);
+            cookie.setPath("/");
+            cookieResponse.addCookie(cookie);
+        }
+
         return ResponseEntity.ok(response);
     }
 
@@ -143,7 +144,7 @@ public class AuthRestController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(@CookieValue(value = "rememberMeToken", required = false)String redisToken){
+    public ResponseEntity<?> logout(@CookieValue(value = "rememberMeToken", required = false)String redisToken, HttpServletResponse response){
         UserDetailImpl userDetail = (UserDetailImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Long userId = userDetail.getId();
         refreshTokenService.deleteByUserId(userId);
@@ -153,10 +154,10 @@ public class AuthRestController {
                 redisTemplate.delete("credentials:"+username);
             }
         }
-        HttpHeaders headers = new HttpHeaders();
         Cookie cookie = new Cookie("rememberMeToken", null);
         cookie.setMaxAge(0);
-        headers.add("Set-Cookie","rememberMeToken=" + redisToken + "; Max-Age=604800; HttpOnly; Path=/" );
+        cookie.setPath("/");
+        response.addCookie(cookie);
         MessageResponse mess = new MessageResponse("Logout Success");
         return new ResponseEntity<>(mess, HttpStatus.OK);
     }

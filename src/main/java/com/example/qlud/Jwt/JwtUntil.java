@@ -29,11 +29,6 @@ public class JwtUntil {
                 .parseClaimsJws(token).getBody().getSubject();
     }
 
-//    public String getPhoneFromJwtToken(String token) {
-//        return Jwts.parserBuilder().setSigningKey(key()).build()
-//                .parseClaimsJws(token).getBody().getSubject();
-//    }
-
     public String generateTokenFromEmail(String email){
         return Jwts.builder()
                 .setSubject(email)

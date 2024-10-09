@@ -12,11 +12,21 @@
 
     <!-- CSS INCLUDE -->
     <link rel="stylesheet" type="text/css" id="theme" href="/css/theme-default.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/style.css"/>
     <!-- EOF CSS INCLUDE -->
 </head>
 <body>
 
 <div class="login-container">
+
+    <div id="dialog" class="dialog" style="display: none">
+        <div class="dialog-content">
+            <span class="close-button">&times;</span>
+            <h2 id="dialog-title">Dialog Title</h2>
+            <p id="dialog-message">This is a simple dialog box!</p>
+            <button id="confirm-button">OK</button>
+        </div>
+    </div>
 
     <div class="login-box animated fadeInDown">
         <div class="login-logo"></div>
@@ -136,13 +146,28 @@
                 window.location.href = '/home';
             } else {
                 const errorData = await response.json();
-                alert(errorData.message || 'Login Failure!');
+                if(errorData.message.toLowerCase().indexOf("UserDetailsService returned null".toLowerCase()) !== -1){
+                    showDialog("Login Failure", "Tài khoản không tồn tại")
+                }else if(errorData.message.toLowerCase().indexOf("Bad Credentials".toLowerCase()) !== -1){
+                    showDialog('Login Failure', "password không đúng hoặc tên tài khoản không đúng");
+                }
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('An error occurred while logging in. Please try again.');
+            if(error.message.toLowerCase().indexOf("UserDetailsService returned null".toLowerCase()) !== -1){
+                showDialog("Login Failure", "Tài khoản không tồn tại")
+            }else if(error.message.toLowerCase().indexOf("Bad Credentials".toLowerCase()) !== -1){
+                showDialog('Login Failure', "password không đúng hoặc tên tài khoản không đúng");
+            }
         }
     });
+
+    window.onload =function (){
+        const urlParams = new URLSearchParams(window.location.search);
+        if(urlParams.has('username')){
+            showDialog('Register Success','Đăng ký tài khoản hoàn tất');
+        }
+    }
 
     const params = new URLSearchParams(window.location.search);
     const username = params.get('username');
@@ -155,7 +180,6 @@
     }
 
 </script>
-
-
+<script src='/js/dialog.js'></script>
 </body>
 </html>

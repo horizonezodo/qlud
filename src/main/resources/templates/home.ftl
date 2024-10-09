@@ -39,57 +39,7 @@
   <div class="hero_area">
     <!-- header section strats -->
     <header class="header_section">
-      <div class="header_top">
-        <div class="container-fluid header_top_container">
-          <div class="lang_box dropdown">
-            <a href="#" title="Language" class="nav-link" data-toggle="dropdown" aria-expanded="true">
-              <img src="/img/flag-uk.png" alt="flag" class=" " title="United Kingdom"> <i class="fa fa-angle-down " aria-hidden="true"></i>
-            </a>
-            <div class="dropdown-menu ">
-              <a href="#" class="dropdown-item">
-                <img src="/img/flag-france.png" class="" alt="flag">
-              </a>
-            </div>
-            <span>
-              English
-            </span>
-          </div>
-          <div class="contact_nav">
-            <a href="">
-              <i class="fa fa-phone" aria-hidden="true"></i>
-              <span>
-                Call : +01 123455678990
-              </span>
-            </a>
-            <a href="">
-              <i class="fa fa-envelope" aria-hidden="true"></i>
-              <span>
-                Email : demo@gmail.com
-              </span>
-            </a>
-            <a href="">
-              <i class="fa fa-map-marker" aria-hidden="true"></i>
-              <span>
-                Location
-              </span>
-            </a>
-          </div>
-          <div class="social_box">
-            <a href="">
-              <i class="fa fa-facebook" aria-hidden="true"></i>
-            </a>
-            <a href="">
-              <i class="fa fa-twitter" aria-hidden="true"></i>
-            </a>
-            <a href="">
-              <i class="fa fa-linkedin" aria-hidden="true"></i>
-            </a>
-            <a href="">
-              <i class="fa fa-instagram" aria-hidden="true"></i>
-            </a>
-          </div>
-        </div>
-      </div>
+
       <div class="header_bottom">
         <div class="container-fluid">
           <nav class="navbar navbar-expand-lg custom_nav-container ">
@@ -782,29 +732,6 @@
 
   <!-- info section -->
   <section class="info_section ">
-
-    <div class="container">
-      <div class="contact_nav">
-        <a href="">
-          <i class="fa fa-phone" aria-hidden="true"></i>
-          <span>
-            Call : +01 123455678990
-          </span>
-        </a>
-        <a href="">
-          <i class="fa fa-envelope" aria-hidden="true"></i>
-          <span>
-            Email : demo@gmail.com
-          </span>
-        </a>
-        <a href="">
-          <i class="fa fa-map-marker" aria-hidden="true"></i>
-          <span>
-            Location
-          </span>
-        </a>
-      </div>
-
       <div class="info_top ">
         <div class="row info_main_row">
           <div class="col-sm-6 col-md-4 col-lg-3">
