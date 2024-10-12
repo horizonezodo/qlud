@@ -141,12 +141,10 @@
                             <div class="price" id="priceDiv"></div>
                         </div>
                     </div>
-                    <div class="product-color-info" id="product-color-info" style="width: 80%;">
-                        <p id="color-name"></p>
-                        <div id="color-buttons"></div>
+                    <div class="product-color-info" id="product-color-info" style="width: 100%;">
                     </div>
                     <div class="size-info">
-                        <p id="size-name"></p>
+                        <p id="size-name" class="size-name"></p>
                         <table class="size-table">
                             <tbody id="sizeDetails"></tbody>
                         </table>
@@ -383,7 +381,7 @@
                         sizeTable.innerHTML = '';
                         const showData = data.productColorAndSize.productInfoMap;
                         showData.forEach(showData => {
-                            document.getElementById("size-name").innerText = '采购量';
+                            document.querySelector(".size-name").innerText = '采购量';
 
                             const row = document.createElement("tr");
                             const priceCell = document.createElement("td");
@@ -432,18 +430,25 @@
                 else {
                     console.log("asa")
                     const sizeTable = document.getElementById("sizeDetails");
-                    // sizeTable.innerHTML = '';
+                    const colorButtonDiv = document.getElementById('product-color-info');
+                    colorButtonDiv.innerHTML = '';
+                    sizeTable.innerHTML = '';
 
                     if(data.productColorAndSize.productColor.colors.length > 0 && data.productColorAndSize.productSize.size.length > 0){
                         console.log("abs")
+                        console.log(data.productColorAndSize.productSize.name)
                         document.getElementById("size-name").innerText = data.productColorAndSize.productSize.name;
-                        const otherImageProductDiv = document.getElementById("color-buttons");
-                        otherImageProductDiv.innerHTML=''
+                        console.log("đã gán name");
+                        const otherImageProductDiv = document.createElement("div")
+                        otherImageProductDiv.id="color-buttons";
+                        otherImageProductDiv.classList.add('color-buttons')
                         console.log("qua thẻ div")
-                        const buttonLabel = document.getElementById("color-name");
-                            buttonLabel.innerHTML = '';
-                            console.log("qua label")
-                            buttonLabel.innerText = data.productColorAndSize.productColor.name;
+                        const buttonLabel = document.createElement('p')
+                        buttonLabel.id = "color-name";
+                        buttonLabel.classList.add('color-name')
+                        console.log("qua label")
+                        buttonLabel.innerText = data.productColorAndSize.productColor.name;
+                        colorButtonDiv.appendChild(buttonLabel)
 
                         data.productColorAndSize.productColor.colors.forEach(imageOtherProduct => {
                             const button = document.createElement("button");
@@ -458,6 +463,7 @@
                             otherImageProductDiv.appendChild(button);
 
                         });
+                        colorButtonDiv.appendChild(otherImageProductDiv);
 
                         function updateTable(selectorColorName) {
                             sizeTable.innerHTML = '';
@@ -756,11 +762,8 @@
                 document.getElementById('productDetails').style.display = 'block';
             })
             .catch(error =>{
-                if(error.toLowerCase().indexOf("can not read".toLowerCase()) !== -1){
-                    showDialog("Eror", "Sorry we got some error");
-                }else{
-                    showDialog("Error", error.message);
-                }
+                showDialog("Error", "Sorry we got some error");
+                console.log(error)
             });
     });
     function displayMainImage(index) {
