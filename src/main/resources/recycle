@@ -1,0 +1,60 @@
+
+
+//       Tạo đối tượng Product Color trong dối tượng ProductColorAndSize
+//        ProductColor productColor = new ProductColor();
+//        productColor.setId(colorObject.getInt("fid"));
+//        productColor.setName(colorObject.getString("prop"));
+//        List<Color> colorList = new ArrayList<>();
+//        for (int i=0; i<colorArray.length();i++){
+//            String name = colorArray.getJSONObject(i).getString("name");
+//            String imageUrl = colorArray.getJSONObject(i).getString("imageUrl");
+//            Color color = new Color(name, imageUrl);
+//            colorList.add(color);
+//        }
+//        productColor.setColors(colorList);
+
+
+//        Tạo đối tượng Product Size trong dối tượng ProductColorAndSize
+//        JSONObject sizeObject = skuPropsArray.getJSONObject(1);
+//        JSONArray sizeArray = skuPropsArray.getJSONObject(1).getJSONArray("value");
+//        ProductSize productSize = new ProductSize();
+//        productSize.setId(sizeObject.getInt("fid"));
+//        productSize.setName(sizeObject.getString("prop"));
+//        List<String> sizeList = new ArrayList<>();
+//        for (int i = 0; i< sizeArray.length();i++){
+//            sizeList.add(sizeArray.getJSONObject(i).getString("name"));
+//        }
+//        productSize.setSize(sizeList);
+//        ProductSize productSize = getProductSize(sizeObject, sizeArray);
+
+
+//        JSONObject colorObject = skuPropsArray.getJSONObject(0);
+//        JSONArray colorArray = skuPropsArray.getJSONObject(0).getJSONArray("value");
+//
+//
+////       Tạo đối tượng Product Color trong dối tượng ProductColorAndSize
+//        ProductColor productColor = new ProductColor();
+//        productColor.setId(colorObject.getInt("fid"));
+//        productColor.setName(colorObject.getString("prop"));
+//        List<Color> colorList = new ArrayList<>();
+//        for (int i=0; i<colorArray.length();i++){
+//            String name = colorArray.getJSONObject(i).getString("name");
+//            String imageUrl = colorArray.getJSONObject(i).getString("imageUrl");
+//            Color color = new Color(name, imageUrl);
+//            colorList.add(color);
+//        }
+//        productColor.setColors(colorList);
+//
+////        Tạo đối tượng Product Size trong dối tượng ProductColorAndSize
+//        JSONObject sizeObject = skuPropsArray.getJSONObject(1);
+//        JSONArray sizeArray = skuPropsArray.getJSONObject(1).getJSONArray("value");
+//        ProductSize productSize = new ProductSize();
+//        productSize.setId(sizeObject.getInt("fid"));
+//        productSize.setName(sizeObject.getString("prop"));
+//        List<String> sizeList = new ArrayList<>();
+//        for (int i = 0; i< sizeArray.length();i++){
+//            sizeList.add(sizeArray.getJSONObject(i).getString("name"));
+//        }
+//        productSize.setSize(sizeList);
+
+//Tạo đối tượng Product Info Map trong dối tượng ProductColorAndSize
