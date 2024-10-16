@@ -437,7 +437,6 @@
 
                     if(data.productColorAndSize.productColor.colors.length > 0 && data.productColorAndSize.productSize.size.length > 0){
                         console.log("abs")
-                        console.log(data.productColorAndSize.productSize.name)
                         document.querySelector(".size-name").innerHTML = '';
                         document.getElementById("size-name").innerText = data.productColorAndSize.productSize.name;
                         console.log("đã gán name");
@@ -488,7 +487,17 @@
 
                                 const priceCell = document.createElement("td")
                                 priceCell.classList.add("bold-text")
-                                const priceData = detail.discountPrice ? detail.discountPrice : detail.currentPrice;
+                                console.log("Discount price data")
+                                console.log(detail.discountPrice)
+                                const salePrice = detail.discountPrice
+                                let priceData = null
+                                console.log(salePrice)
+                                if(detail.discountPrice !== undefined || detail.discountPrice !== null || detail.discountPrice !== ''){
+                                    console.log("đã qua div")
+                                    priceData = salePrice ? salePrice : detail.currentPrice;
+                                }else{
+                                    priceData = detail.currentPrice;
+                                }
                                 const colorPrice = ((parseFloat(priceData) === 0) ? maxPrice : priceData) + " 元"
                                 priceCell.innerText = detail ? colorPrice : "N/A";
                                 row.appendChild(priceCell);
@@ -559,7 +568,12 @@
 
                                 const priceCell = document.createElement("td")
                                 priceCell.classList.add("bold-text")
-                                const priceData = detail.discountPrice ? detail.discountPrice : detail.currentPrice;
+                                let priceData = null
+                                if(detail.discountPrice !== undefined || detail.discountPrice !== null || detail.discountPrice !== ''){
+                                    priceData = detail.discountPrice ? detail.discountPrice : detail.currentPrice;
+                                }else{
+                                    priceData = detail.currentPrice;
+                                }
                                 const colorPrice = ((parseFloat(priceData) === 0) ? maxPrice : priceData) + " 元"
                                 priceCell.innerText = detail ? colorPrice : "N/A";
                                 row.appendChild(priceCell);
@@ -618,7 +632,12 @@
 
                             const priceCell = document.createElement("td")
                             priceCell.classList.add("bold-text")
-                            const priceData = detail.discountPrice ? detail.discountPrice : detail.currentPrice;
+                            let priceData = null
+                            if(detail.discountPrice !== undefined || detail.discountPrice !== null || detail.discountPrice !== ''){
+                                priceData = detail.discountPrice ? detail.discountPrice : detail.currentPrice;
+                            }else{
+                                priceData = detail.currentPrice;
+                            }
                             const colorPrice = ((parseFloat(priceData) === 0) ? maxPrice : priceData) + " 元"
                             priceCell.innerText = detail ? colorPrice : "N/A";
                             row.appendChild(priceCell);

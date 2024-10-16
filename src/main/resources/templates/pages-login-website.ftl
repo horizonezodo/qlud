@@ -76,7 +76,7 @@
 <#--                        </button>-->
 <#--                    </div>-->
                     <div id="g_id_onload"
-                         data-client_id="client_id"
+                         data-client_id="client-id"
                          data-callback="handleCredentialResponse"
                          data-auto_prompt="false">
                     </div>

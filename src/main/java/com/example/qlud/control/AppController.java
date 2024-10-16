@@ -5,9 +5,14 @@ import com.example.qlud.model.Product;
 import com.example.qlud.repo.ProductRepo;
 import com.example.qlud.response.GetAllProductResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,8 +38,13 @@ public class AppController {
     public String ShowAllProduct(Model model){
         List<Product> listProduct = repo.findAll();
         model.addAttribute("result",listProduct);
-
         return "all-product-page";
+    }
+
+    @PostMapping("/search")
+    @ResponseBody
+    public ResponseEntity<?> searchProduct(@RequestParam("key") String key){
+        return new ResponseEntity<>(repo.findByKey(key), HttpStatus.OK);
     }
 
     private GetAllProductResponse convertProductResponse(Product product){
