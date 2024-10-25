@@ -49,7 +49,8 @@
 //    }
 //
 //    @Override
-//    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+//    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+//            throws ServletException, IOException {
 //        Instant start = Instant.now();
 //        String requestBody = "";
 //        CachedBodyHttpServletResponse cachedResponse = new CachedBodyHttpServletResponse(response);
@@ -93,13 +94,19 @@
 //            byte[] content = cachedResponse.getContent();
 //            String responseBody = new String(content, StandardCharsets.UTF_8);
 //
-////            logger.info("Request URL: {}", request.getRequestURL());
-////            logger.info("Request Body: {}", requestBody);
-////            logger.info("Response Status: {}", cachedResponse.getStatus());
-////            logger.info("Start Time: {}", start);
-////            logger.info("End Time: {}", end);
-////            logger.info("Duration (ms): {}", duration);
-////            logger.info("Response Body: {}", responseBody);
+//            // Kiểm tra Content-Type để ghi log
+//            String contentType = cachedResponse.getContentType();
+//            if (contentType != null && contentType.equalsIgnoreCase("application/json")) {
+////                logger.info("Request URL: {}", request.getRequestURL());
+////                logger.info("Request Body: {}", requestBody);
+////                logger.info("Response Status: {}", cachedResponse.getStatus());
+////                logger.info("Start Time: {}", start);
+////                logger.info("End Time: {}", end);
+////                logger.info("Duration (ms): {}", duration);
+////                logger.info("Response Body: {}", responseBody);
+//
+//                service.saveLog(request.getRequestURL().toString(),request.getMethod(),requestBody,responseBody,response.getStatus(),start,end,duration);
+//            }
 //
 //            // Copy the cached response back to the original response
 //            response.getWriter().write(responseBody);
@@ -107,11 +114,13 @@
 //    }
 //
 //
+//
 //}
 
 
 package com.example.qlud.Jwt;
 
+import com.example.qlud.model.CustomLog;
 import com.example.qlud.service.UserDetailServiceImpl;
 import io.jsonwebtoken.JwtException;
 import org.slf4j.Logger;
@@ -135,6 +144,11 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
     @Autowired
     JwtUntil until;
+
+    @Autowired
+    CustomLog logs;
+
+    private static final Logger logger2 = LoggerFactory.getLogger(CustomLog.class);
 
     @Autowired
     UserDetailServiceImpl userDetailService;

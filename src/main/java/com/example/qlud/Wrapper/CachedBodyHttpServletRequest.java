@@ -16,14 +16,13 @@ public class CachedBodyHttpServletRequest extends HttpServletRequestWrapper {
 
     public CachedBodyHttpServletRequest(HttpServletRequest request) throws IOException {
         super(request);
-        // Đọc byte từ ServletInputStream
         this.cachedBody = readBytes(request.getInputStream());
     }
 
     private byte[] readBytes(ServletInputStream inputStream) throws IOException {
-        // Sử dụng ByteArrayOutputStream để lưu trữ dữ liệu đọc được
+
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        byte[] data = new byte[1024]; // Đọc theo khối 1024 bytes
+        byte[] data = new byte[1024];
         int length;
         while ((length = inputStream.read(data, 0, data.length)) != -1) {
             buffer.write(data, 0, length);

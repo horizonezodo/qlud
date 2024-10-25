@@ -5,12 +5,15 @@ import com.example.qlud.repo.ProductRepo;
 import com.example.qlud.requets.CrawlRequest;
 import com.example.qlud.response.CrawlResponse;
 import com.example.qlud.response.MessageResponse;
+import com.example.qlud.service.ConvertToString;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -23,19 +26,44 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.time.Instant;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/app")
+@CrossOrigin(origins = "*", maxAge = 3600)
 public class CrawlController {
 
     @Autowired
+    CustomLog logs;
+
+    private static final Logger logger = LoggerFactory.getLogger(CustomLog.class);
+
+    @Autowired
     ProductRepo repo;
+    
+    @Autowired
+    ConvertToString convert;
+
+    @GetMapping("/crawl-data")
+    public ResponseEntity<?> getAllData(){
+        Instant startTime = Instant.now();
+        logger.info(logs.info("Get all Crawl Data success","", "/app/crawl-data",convert.convertToJson(repo.findAll()).toString(),"GET",startTime, 200 ));
+        return new ResponseEntity<>(repo.findAll(), HttpStatus.OK);
+    }
+
+    @PostMapping("/search")
+    public ResponseEntity<?> searchData(@RequestParam(name = "key")String key){
+        Instant startTime = Instant.now();
+        logger.info(logs.info("Search success",key, "/app/search",convert.convertToJson(repo.findByKey(key)),"POST",startTime, 200 ));
+        return new ResponseEntity<>(repo.findByKey(key), HttpStatus.OK);
+    }
 
     @PostMapping("/crawl")
     public ResponseEntity<?> crawlData(@RequestBody CrawlRequest request) throws IOException {
+        Instant startTime = Instant.now();
 //        File htmlFile = new File("E:\\data.html");
 //        Document doc = Jsoup.parse(htmlFile, "UTF-8");
         String decodedData = URLDecoder.decode(request.getCookieData(), "UTF-8");
@@ -75,10 +103,13 @@ public class CrawlController {
             }
             if(price.isEmpty() && data.isEmpty() && otherProduct.isEmpty() && ListImage.isEmpty() && videoJson.isEmpty() && otherProduct2.isEmpty() && electrixOtherProduct.isEmpty() && detailUrl.isEmpty()){
                 if(rawHtmlData.contains("captcha")){
+                    logger.info(logs.error("Got Captcha",convert.convertToJson(request), "/app/crawl",convert.convertToJson(new MessageResponse("Sorry bot got captcha see you late")),"POST",startTime, 400 ));
                     return new ResponseEntity<>(new MessageResponse("Sorry bot got captcha see you late"), HttpStatus.BAD_REQUEST);
                 }else if(rawHtmlData.contains("login")){
+                    logger.info(logs.error("Cookie is expired",convert.convertToJson(request), "/app/crawl",convert.convertToJson(new MessageResponse("Cookie is expired change cookie please")),"POST",startTime, 400 ));
                     return new ResponseEntity<>(new MessageResponse("Cookie is expired change cookie please"), HttpStatus.BAD_REQUEST);
                 }else{
+                    logger.info(logs.error("No data found",convert.convertToJson(request), "/app/crawl",convert.convertToJson(new MessageResponse("No data found")),"POST",startTime, 400 ));
                     return new ResponseEntity<>(new MessageResponse("No data found"), HttpStatus.BAD_REQUEST);
                 }
             }else{
@@ -123,9 +154,11 @@ public class CrawlController {
                     Product newProduct = TransferDataFromResponseToObject(p,result);
                     repo.save(newProduct);
                 }
+                logger.info(logs.info("Crawl data success",convert.convertToJson(request), "/app/crawl",convert.convertToJson(result),"POST",startTime, 200 ));
                 return ResponseEntity.ok(result);
             }
         }else{
+            logger.info(logs.error("No raw Data get",convert.convertToJson(request), "/app/crawl",convert.convertToJson(new MessageResponse("No raw Data get")),"POST",startTime, 400 ));
             return new ResponseEntity<>(new MessageResponse("No raw Data get"), HttpStatus.BAD_REQUEST);
         }
     }
@@ -274,6 +307,7 @@ public class CrawlController {
         String other = otherProduct.trim();
         if (other.endsWith(",")) other = other.substring(0, other.length() - 1);
         String jsonString = "{" + other + "}}" ;
+        System.out.println(jsonString);
         ProductColorAndSize productColorAndSize = new ProductColorAndSize();
         ProductColor productColor = new ProductColor();
         ProductSize productSize = new ProductSize();
@@ -357,6 +391,7 @@ public class CrawlController {
         String other = otherProduct.trim();
         if (other.endsWith(",")) other = other.substring(0, other.length() - 1);
         String jsonString = "{" + other + "}}" ;
+        System.out.println(jsonString);
         ProductColorAndSize productColorAndSize = new ProductColorAndSize();
         ProductColor productColor = new ProductColor();
         ProductSize productSize = new ProductSize();

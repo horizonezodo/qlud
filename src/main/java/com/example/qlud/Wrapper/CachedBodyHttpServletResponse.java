@@ -32,7 +32,7 @@ public class CachedBodyHttpServletResponse extends HttpServletResponseWrapper {
 
     public byte[] getContent() throws IOException {
         if (writer != null) {
-            writer.flush(); // Đảm bảo nội dung được ghi ra
+            writer.flush();
         }
         return outputStream.toByteArray();
     }
@@ -46,7 +46,7 @@ public class CachedBodyHttpServletResponse extends HttpServletResponseWrapper {
 
         @Override
         public void write(int b) throws IOException {
-            outputStream.write(b); // Ghi vào ByteArrayOutputStream
+            outputStream.write(b);
         }
 
         @Override
@@ -56,7 +56,6 @@ public class CachedBodyHttpServletResponse extends HttpServletResponseWrapper {
 
         @Override
         public void setWriteListener(WriteListener listener) {
-            // Không làm gì
         }
 
         @Override

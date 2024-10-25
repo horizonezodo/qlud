@@ -29,8 +29,6 @@ public class UserDetailServiceImpl implements UserDetailsService {
         }else if(userOpt.isPresent()){
             return UserDetailImpl.build(userOpt.get());
         }
-        List<User> li = userRepo.findAll();
-        System.out.println(li.toString());
         return null;
     }
 }

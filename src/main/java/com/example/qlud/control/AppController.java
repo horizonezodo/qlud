@@ -1,60 +1,30 @@
 package com.example.qlud.control;
 
-import com.example.qlud.DTO.ProductDTO;
-import com.example.qlud.model.Product;
+import com.example.qlud.model.CustomLog;
 import com.example.qlud.repo.ProductRepo;
-import com.example.qlud.response.GetAllProductResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.time.Instant;
 
 @Controller
+@CrossOrigin(origins = "*", maxAge = 3600)
 public class AppController {
 
     @Autowired
     ProductRepo repo;
 
-    @GetMapping("/home")
-    public String getHome(Model model){
-        return "home";
+    @GetMapping("/")
+    public String landingPage(Model model) {
+        return "index";
     }
 
-    @GetMapping("/app-show-crawl")
-    public String showCrawlPage(Model model){
-        return "crawl";
-    }
-
-    @GetMapping("/show-all-product")
-    public String ShowAllProduct(Model model){
-        List<Product> listProduct = repo.findAll();
-        model.addAttribute("result",listProduct);
-        return "all-product-page";
-    }
-
-    @PostMapping("/search")
-    @ResponseBody
-    public ResponseEntity<?> searchProduct(@RequestParam("key") String key){
-        return new ResponseEntity<>(repo.findByKey(key), HttpStatus.OK);
-    }
-
-    private GetAllProductResponse convertProductResponse(Product product){
-        GetAllProductResponse productResponse = new GetAllProductResponse();
-        productResponse.setOfferId(product.getOfferId());
-        productResponse.setProductTitle(product.getProductTitle());
-        productResponse.setSize(product.getProductColorAndSize().getProductSize().getSize());
-        productResponse.setCurrentPrice(product.getProductPrices().getCurrentPrice());
-        productResponse.setOriginalPrice(product.getProductPrices().getOriginalPrice());
-        System.out.println(productResponse);
-        return  productResponse;
+    @RequestMapping("/partials/{page}")
+    String partialHandler(@PathVariable("page") final String page) {
+        return page;
     }
 }
