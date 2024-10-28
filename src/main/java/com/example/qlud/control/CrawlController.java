@@ -15,9 +15,12 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -48,17 +51,19 @@ public class CrawlController {
     ConvertToString convert;
 
     @GetMapping("/crawl-data")
-    public ResponseEntity<?> getAllData(){
+    public ResponseEntity<?> getAllData(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size){
         Instant startTime = Instant.now();
+        Pageable pageable = (Pageable) PageRequest.of(page, size);
         logger.info(logs.info("Get all Crawl Data success","", "/app/crawl-data",convert.convertToJson(repo.findAll()).toString(),"GET",startTime, 200 ));
-        return new ResponseEntity<>(repo.findAll(), HttpStatus.OK);
+        return new ResponseEntity<>(repo.findAll(pageable), HttpStatus.OK);
     }
 
     @PostMapping("/search")
-    public ResponseEntity<?> searchData(@RequestParam(name = "key")String key){
+    public ResponseEntity<?> searchData(@RequestParam(name = "key")String key, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size){
         Instant startTime = Instant.now();
-        logger.info(logs.info("Search success",key, "/app/search",convert.convertToJson(repo.findByKey(key)),"POST",startTime, 200 ));
-        return new ResponseEntity<>(repo.findByKey(key), HttpStatus.OK);
+        Pageable pageable = (Pageable) PageRequest.of(page, size);
+        logger.info(logs.info("Search success",key, "/app/search",convert.convertToJson(repo.findByKey(key, pageable)),"POST",startTime, 200 ));
+        return new ResponseEntity<>(repo.findByKey(key,pageable), HttpStatus.OK);
     }
 
     @PostMapping("/crawl")

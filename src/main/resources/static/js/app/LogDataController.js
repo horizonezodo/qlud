@@ -6,14 +6,14 @@ angular.module('app').factory('LogDataService', ['$http', '$q',function ($http,$
         searchData:searchData,
     };
 
-    function getAllData2(){
+    function getAllData2(page,size){
         const deferred = $q.defer();
         const headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
         }
 
-        $http.get('http://192.168.113.231:8080/app/all-log',{headers:headers})
+        $http.get('http://192.168.113.231:8080/app/all-log?page='+page+'&size='+size,{headers:headers})
             .then(
                 function (res){
                     console.log("Get all data: ", res.data);
@@ -26,13 +26,13 @@ angular.module('app').factory('LogDataService', ['$http', '$q',function ($http,$
         return deferred.promise;
     }
 
-    function getAllData(){
+    function getAllData(page,size){
         const deferred = $q.defer();
         const headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
         }
-        $http.get('http://192.168.113.231:8080/app/all-log',{headers:headers})
+        $http.get('http://192.168.113.231:8080/app/all-log?page=' + page + '&size=' + size,{headers:headers})
             .then(
                 function (res){
                     console.log('Get data: ', res);
@@ -47,13 +47,13 @@ angular.module('app').factory('LogDataService', ['$http', '$q',function ($http,$
         return deferred.promise;
     }
 
-    function searchData(keyvalue){
+    function searchData(keyvalue,page,size){
         const deferred = $q.defer();
         const headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
         }
-        $http.post('http://192.168.113.231:8080/app/search-log?key=' + keyvalue,{},{headers:headers})
+        $http.post('http://192.168.113.231:8080/app/search-log?key=' + keyvalue + "&page=" + page + '&size=' + size,{},{headers:headers})
             .then(
                 function (res){
                     console.log("search success");
@@ -72,33 +72,31 @@ angular.module('app').factory('LogDataService', ['$http', '$q',function ($http,$
         const self = this;
         self.logDatas = [];
         self.key = '';
+        self.currentPage = 0;
+        self.indexSize = 25;
+        self.totalPage = 100;
+        self.pageToShow = 5;
+        self.listPage = [];
+        self.isSearching = false;
+        self.goToPage = goToPage;
         self.submit = submit;
         self.viewDetail = function (id){
             console.log(id)
             $state.go('log2',{logId:id})
         };
 
-        loadAllData();
+        loadAllData(self.currentPage, self.indexSize);
 
-        // function loadAllData(){
-        //     self.logDatas = [];
-        //     LogDataService.getAllData2().then(
-        //         function (response){
-        //             console.log("data controller thu duoc : ",response);
-        //             self.logDatas = response;}
-        //         ,function (err){
-        //             dialogService.showErrorDialog("Error", err.message);
-        //         }
-        //     )
-        // }
-        function loadAllData(){
+        function loadAllData(page,size){
             dialogService.checkToken().then((isValid) => {
                 if(isValid){
                     self.logDatas = [];
-                    LogDataService.getAllData2().then(
+                    LogDataService.getAllData2(page,size).then(
                         function (response){
                             console.log("data controller thu duoc : ",response);
-                            self.logDatas = response;}
+                            self.totalPage = response.totalPages;
+                            self.logDatas = response.content;
+                            updatePagination();}
                         ,function (err){
                             dialogService.showErrorDialog("Error", err.message);
                         }
@@ -111,18 +109,65 @@ angular.module('app').factory('LogDataService', ['$http', '$q',function ($http,$
             })
         }
 
-        function submit(key){
-            console.log('call submit')
-            LogDataService.searchData(self.key).then(
-                function (response){
-                    console.log('data search: ', response);
-                    self.logDatas = [];
-                    self.logDatas = response;
-                }, function (err){
-                    console.log("err: ", err);
-                    dialogService.showErrorDialog("Error", err.message);
+        function submit(){
+            dialogService.checkToken().then((isValid)=>{
+                if(isValid){
+                    console.log('call submit')
+                    LogDataService.searchData(self.key,self.currentPage,self.indexSize).then(
+                        function (response){
+                            console.log('data search: ', response);
+                            self.totalPage = response.totalPages;
+                            self.logDatas = [];
+                            self.isSearching=true;
+                            self.logDatas = response.content;
+                            updatePagination();
+                        }, function (err){
+                            console.log("err: ", err);
+                            dialogService.showErrorDialog("Error", err.message);
+                        }
+                    )
+                }else{
+                    console.log("Error");
                 }
-            )
+            }).catch((err)=>{
+                console.log(err);
+            })
+        }
+
+        function updatePagination(){
+            self.listPage = [];
+            self.listPage = showNavigate();
+        }
+
+        function showNavigate(){
+            let startPage, endPage;
+            if(self.currentPage <= 3){
+                startPage = 1;
+                endPage = Math.min(self.totalPage, self.pageToShow);
+            }else if(self.currentPage + 2 >= self.totalPage){
+                startPage = Math.max(1, self.totalPage - self.pageToShow + 1);
+                endPage = self.totalPage;
+            }else{
+                startPage = self.currentPage - 2;
+                endPage = self.currentPage + 2;
+            }
+
+            let pages = [];
+            for(let i = startPage ; i < endPage ;i++){
+                pages.push(i);
+            }
+            return pages;
+        }
+
+        function goToPage(page){
+            if(page !== self.currentPage) {
+                self.currentPage = page;
+                if(self.isSearching){
+                    submit()
+                }else{
+                    loadAllData(page, self.indexSize);
+                }
+            }
         }
 
     }])

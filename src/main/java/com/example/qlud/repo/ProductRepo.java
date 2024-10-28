@@ -1,9 +1,12 @@
 package com.example.qlud.repo;
 
 import com.example.qlud.model.Product;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -34,7 +37,9 @@ public interface ProductRepo extends MongoRepository<Product, String> {
             "{ 'videoUrl': { $regex: ?0, $options: 'i' } }, " +
             "{ 'productImageDetail': { $regex: ?0, $options: 'i' } } " +
             "] }")
-    List<Product> findByKey(String key);
+    Page<Product> findByKey(String key, Pageable pageable);
+
+    Page<Product> findAll(Pageable pageable);
 
 
 }

@@ -142,7 +142,7 @@ controller('loginController', ['loginService','dialogService','$scope','$window'
     }
 
 
-    self.clientId = '224739075686-l7flm7piipgsb6vb67b42kq23hhqp07o.apps.googleusercontent.com';
+    self.clientId = '224739075686-qvfc83ndvm4asm1ab0kdtrt0fv2bqpb6.apps.googleusercontent.com';
     window.onGoogleLoginSuccess = function (response){
         const token = response.credential
 

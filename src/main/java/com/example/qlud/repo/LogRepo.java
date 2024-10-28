@@ -1,6 +1,8 @@
 package com.example.qlud.repo;
 
 import com.example.qlud.model.Log;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -15,8 +17,8 @@ public interface LogRepo extends MongoRepository<Log, String> {
             "{ 'method': { $regex: ?0, $options: 'i' } }, " +
             "{ 'message': { $regex: ?0, $options: 'i' } }, " +
             "] }")
-    List<Log> findByKey(String key);
+    Page<Log> findByKey(String key, Pageable pageable);
 
     @Query(value = "{}", fields = "{ 'response': 0}")
-    List<Log> findAllCustom();
+    Page<Log> findAllCustom(Pageable pageable);
 }

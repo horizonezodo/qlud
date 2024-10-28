@@ -47,31 +47,39 @@ angular.module('app')
     console.log(logId);
     getLog(logId);
     function getLog(logId){
-        console.log('log id: ' + logId);
-        Log2Service.getLog(logId).then(
-            function (response){
-                self.logData = {};
-                self.logData.id = response.id;
-                self.logData.url = response.url;
-                self.logData.method = response.method;
-                if(isValidJson(response.request)){
-                    self.logData.request = JSON.parse(response.request);
-                }else{
-                    self.logData.request = response.request;
-                }
-                if(isValidJson(response.response)){
-                    self.logData.response = JSON.parse(response.response);
-                }else{
-                    self.logData.response = response.response;
-                }
-                self.logData.statusCode = response.status;
-                self.logData.startTime = response.startTime;
-                self.logData.message = response.message;
+        dialogService.checkToken().then((isValid)=>{
+            if(isValid){
+                console.log('log id: ' + logId);
+                Log2Service.getLog(logId).then(
+                    function (response){
+                        self.logData = {};
+                        self.logData.id = response.id;
+                        self.logData.url = response.url;
+                        self.logData.method = response.method;
+                        if(isValidJson(response.request)){
+                            self.logData.request = JSON.parse(response.request);
+                        }else{
+                            self.logData.request = response.request;
+                        }
+                        if(isValidJson(response.response)){
+                            self.logData.response = JSON.parse(response.response);
+                        }else{
+                            self.logData.response = response.response;
+                        }
+                        self.logData.statusCode = response.status;
+                        self.logData.startTime = response.startTime;
+                        self.logData.message = response.message;
+                    }
+                    ,function (err){
+                        dialogService.showErrorDialog("Error", err.message);
+                    }
+                )
+            }else{
+                console.log("is not valid");
             }
-            ,function (err){
-                dialogService.showErrorDialog("Error", err.message);
-            }
-        )
+        }).catch((err)=>{
+            console.log(err);
+        })
     }
 
     function isValidJson(str){

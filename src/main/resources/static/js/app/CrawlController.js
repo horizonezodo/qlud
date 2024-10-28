@@ -69,99 +69,107 @@ angular.module('app').factory('CrawlService', ['$http', '$q',function ($http,$q)
 
     function crawlData(crawl){
 
-        self.ImageList=[];
-        self.ImageDetailList = [];
-        self.currentPriceList=[];
-        self.originalPriceList=[];
-        self.colorList=[];
-        self.sizeList=[];
-        self.mapList=[];
-        self.detailList=[];
-        self.title='';
-        self.priceLabel='';
-        self.colorLabel='';
-        self.sizeLable='';
-        self.detailLabel='';
-        self.showVideo = false;
-        self.videoLabel='';
-        self.videoUrl ='';
-        self.imageDetailLabel='';
-        self.productUrl='';
-        self.offterId='';
-        self.imageDetailList=[];
-        self.imagePerPage = 4;
-        self.currentPage = 0;
-        self.currentImages=[];
-        self.currentImage = '';
-        self.colorNull = false;
-        self.sizeNull = false;
-        self.showImgBtn = false;
-        self.showImgData = false;
+        dialogService.checkToken().then((isValid)=>{
+            if(isValid){
+                self.ImageList=[];
+                self.ImageDetailList = [];
+                self.currentPriceList=[];
+                self.originalPriceList=[];
+                self.colorList=[];
+                self.sizeList=[];
+                self.mapList=[];
+                self.detailList=[];
+                self.title='';
+                self.priceLabel='';
+                self.colorLabel='';
+                self.sizeLable='';
+                self.detailLabel='';
+                self.showVideo = false;
+                self.videoLabel='';
+                self.videoUrl ='';
+                self.imageDetailLabel='';
+                self.productUrl='';
+                self.offterId='';
+                self.imageDetailList=[];
+                self.imagePerPage = 4;
+                self.currentPage = 0;
+                self.currentImages=[];
+                self.currentImage = '';
+                self.colorNull = false;
+                self.sizeNull = false;
+                self.showImgBtn = false;
+                self.showImgData = false;
 
-        const cookieData = encodeURIComponent(self.cookieValue);
-        self.crawl.cookieData = cookieData
-        CrawlService.crawlData(self.crawl)
-            .then(
-                function (res){
-                    console.log('response data: ', res);
-                     self.ImageList = res.imageProductList;
-                     self.ImageDetailList = res.productImageDetail;
-                     self.currentPriceList = res.productPrices.currentPrice;
-                     self.originalPriceList = res.productPrices.originalPrice;
-                     if(res.productColorAndSize.productColor && res.productColorAndSize.productColor.colors && res.productColorAndSize.productColor.colors.length > 0){
-                         console.log('color size > 0')
-                         self.colorNull = true;
-                         self.colorList = res.productColorAndSize.productColor.colors || [];
-                         self.colorLabel=res.productColorAndSize.productColor.name;
-                         if(res.productColorAndSize.productColor.colors.imageUrl !== "" || res.productColorAndSize.productColor.colors.imageUrl !== null || res.productColorAndSize.productColor.colors.imageUrl !== undefined){
-                             console.log("Đã chạy vào check image")
-                             self.showImgBtn = true;
-                             self.showImgData = true;
-                         }else{
-                             console.log("ko chạy vào check image")
-                             self.showImgBtn = false;
-                             self.showImgData = false;
-                         }
-                     }
+                const cookieData = encodeURIComponent(self.cookieValue);
+                self.crawl.cookieData = cookieData
+                CrawlService.crawlData(self.crawl)
+                    .then(
+                        function (res){
+                            console.log('response data: ', res);
+                            self.ImageList = res.imageProductList;
+                            self.ImageDetailList = res.productImageDetail;
+                            self.currentPriceList = res.productPrices.currentPrice;
+                            self.originalPriceList = res.productPrices.originalPrice;
+                            if(res.productColorAndSize.productColor && res.productColorAndSize.productColor.colors && res.productColorAndSize.productColor.colors.length > 0){
+                                console.log('color size > 0')
+                                self.colorNull = true;
+                                self.colorList = res.productColorAndSize.productColor.colors || [];
+                                self.colorLabel=res.productColorAndSize.productColor.name;
+                                if(res.productColorAndSize.productColor.colors.imageUrl !== "" || res.productColorAndSize.productColor.colors.imageUrl !== null || res.productColorAndSize.productColor.colors.imageUrl !== undefined){
+                                    console.log("Đã chạy vào check image")
+                                    self.showImgBtn = true;
+                                    self.showImgData = true;
+                                }else{
+                                    console.log("ko chạy vào check image")
+                                    self.showImgBtn = false;
+                                    self.showImgData = false;
+                                }
+                            }
 
-                    if(res.productColorAndSize.productSize && res.productColorAndSize.productSize.size && res.productColorAndSize.productSize.size.length > 0){
-                        console.log('size size > 0')
-                        self.sizeNull=true
-                        self.sizeLable=res.productColorAndSize.productSize.name;
-                        self.sizeList = res.productColorAndSize.productSize.size || [];
-                    }
-                    self.mapList = res.productColorAndSize.productInfoMap;
-                    self.detailList = res.productDetail.productInfos;
-                    self.title= res.productTitle;
-                    self.priceLabel=res.productPrices.name;
-                    self.detailLabel=res.productDetail.name;
-                    self.videoLabel='Video Demo';
-                    if(res.videoUrl !== null && res.videoUrl !== '' && res.videoUrl !== undefined && res.videoUrl){
-                        self.showVideo=true;
-                        self.videoUrl = res.videoUrl;
-                    }
-                    self.imageDetailLabel='商品描述';
-                    self.imageDetailList = res.productImageDetail;
-                    self.productUrl=res.link;
-                    self.offterId=res.offerId;
-                    self.currentImage = self.ImageList[0];
-                    const [colorName1,sizeName1 ] = self.mapList[0].name.split('&gt;');
-                    let nameFoundInColorList = self.colorList.some(item => item.name === colorName1);
-                    let nameFoundInSizeList = self.sizeList.some(item => item.name === colorName1);
-                    if(nameFoundInColorList && !nameFoundInSizeList){
-                        // console.log("có chạy vào đây")
-                        self.showImgBtn = false;
-                    }else if(nameFoundInSizeList && !nameFoundInColorList){
-                        // console.log("cũng chạy vào đây")
-                        self.showImgBtn = true;
-                    }
-                    self.updateCurrentImage();
-                    self.processShowData();
-                    self.isShow=true;
-                }, function (err){
-                    dialogService.showErrorDialog("Crawl Error", err.message)
-                }
-            )
+                            if(res.productColorAndSize.productSize && res.productColorAndSize.productSize.size && res.productColorAndSize.productSize.size.length > 0){
+                                console.log('size size > 0')
+                                self.sizeNull=true
+                                self.sizeLable=res.productColorAndSize.productSize.name;
+                                self.sizeList = res.productColorAndSize.productSize.size || [];
+                            }
+                            self.mapList = res.productColorAndSize.productInfoMap;
+                            self.detailList = res.productDetail.productInfos;
+                            self.title= res.productTitle;
+                            self.priceLabel=res.productPrices.name;
+                            self.detailLabel=res.productDetail.name;
+                            self.videoLabel='Video Demo';
+                            if(res.videoUrl !== null && res.videoUrl !== '' && res.videoUrl !== undefined && res.videoUrl){
+                                self.showVideo=true;
+                                self.videoUrl = res.videoUrl;
+                            }
+                            self.imageDetailLabel='商品描述';
+                            self.imageDetailList = res.productImageDetail;
+                            self.productUrl=res.link;
+                            self.offterId=res.offerId;
+                            self.currentImage = self.ImageList[0];
+                            const [colorName1,sizeName1 ] = self.mapList[0].name.split('&gt;');
+                            let nameFoundInColorList = self.colorList.some(item => item.name === colorName1);
+                            let nameFoundInSizeList = self.sizeList.some(item => item.name === colorName1);
+                            if(nameFoundInColorList && !nameFoundInSizeList){
+                                // console.log("có chạy vào đây")
+                                self.showImgBtn = false;
+                            }else if(nameFoundInSizeList && !nameFoundInColorList){
+                                // console.log("cũng chạy vào đây")
+                                self.showImgBtn = true;
+                            }
+                            self.updateCurrentImage();
+                            self.processShowData();
+                            self.isShow=true;
+                        }, function (err){
+                            dialogService.showErrorDialog("Crawl Error", err.message)
+                        }
+                    )
+            }else{
+                console.log("Is not valid");
+            }
+        }).catch((err)=>{
+            console.log(err);
+        })
     };
 
     //    Hiển thị hình ảnh

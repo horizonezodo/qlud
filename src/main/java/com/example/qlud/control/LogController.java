@@ -7,6 +7,8 @@ import com.example.qlud.response.MessageResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,8 +24,9 @@ public class LogController {
     private LogRepo repo;
 
     @GetMapping("/all-log")
-    public ResponseEntity<?> getAllLog(){
-        return new ResponseEntity<>(repo.findAllCustom(), HttpStatus.OK);
+    public ResponseEntity<?> getAllLog(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size){
+        Pageable pageable = (Pageable) PageRequest.of(page, size);
+        return new ResponseEntity<>(repo.findAllCustom(pageable), HttpStatus.OK);
     }
 
     @GetMapping("/log/{id}")
@@ -37,7 +40,8 @@ public class LogController {
     }
 
     @PostMapping("/search-log")
-    public ResponseEntity<?> searchLog(@RequestParam("key")String key){
-            return new ResponseEntity<>(repo.findByKey(key), HttpStatus.OK);
+    public ResponseEntity<?> searchLog(@RequestParam("key")String key,@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size){
+        Pageable pageable = (Pageable) PageRequest.of(page, size);
+        return new ResponseEntity<>(repo.findByKey(key,pageable), HttpStatus.OK);
     }
 }

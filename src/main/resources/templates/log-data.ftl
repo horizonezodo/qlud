@@ -51,4 +51,9 @@
             <button type="button" ng-click="ctrl.viewDetail(item.id)" class="btn btn-primary custom-width">View Detail</button>
         </div>
     </div>
+    <div class="pagination">
+        <a ng-if="ctrl.currentPage !== 1" ng-click="ctrl.goToPage(ctrl.currentPage - 1)">&laquo;</a>
+        <a ng-repeat="page in ctrl.listPage" ng-click="ctrl.goToPage(page)" ng-class="{'active': page === ctrl.currentPage}">{{page}}</a>
+        <a ng-if="ctrl.currentPage <= ctrl.totalPage" ng-click="ctrl.goToPage(ctrl.currentPage + 1)">&raquo;</a>
+    </div>
 </div>
